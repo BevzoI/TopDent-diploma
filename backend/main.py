@@ -1,12 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from . import auth # Ми створимо цей модуль далі
+from . import auth 
+from . import absences
 
 app = FastAPI(title="TopDentTeam API")
 
-# Налаштування CORS (Критично важливо для мобільних додатків!)
-# Це дозволяє вашому React Native додатку (який працює на іншому порту) 
-# надсилати запити до бекенду.
+
 origins = [
     "*", # Дозволити всі джерела (для розробки)
 ]
@@ -25,3 +24,6 @@ app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 @app.get("/")
 def read_root():
     return {"message": "Welcome to TopDentTeam API (FastAPI)"}
+app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
+app.include_router(announcements.router, prefix="/announcements", tags=["Announcements"]) 
+app.include_router(absences.router, prefix="/absences", tags=["Absences"])

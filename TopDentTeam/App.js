@@ -2,9 +2,9 @@ import React, { useMemo, useReducer } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from './src/screens/LoginScreen';
-import AppNavigator from './src/navigation/AppNavigator'; // Потрібно створити
-import { AuthContext } from './src/context/AuthContext'; // Потрібно створити
-import AsyncStorage from '@react-native-async-storage/async-storage'; // npm install @react-native-async-storage/async-storage
+import AppNavigator from './src/navigation/AppNavigator'; 
+import { AuthContext } from './src/context/AuthContext'; 
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
 
 const Stack = createNativeStackNavigator();
 
@@ -15,7 +15,7 @@ export default function App() {
         case 'RESTORE_TOKEN':
           return { ...prevState, userToken: action.token, isLoading: false, userRole: action.role };
         case 'SIGN_IN':
-          // Зберігаємо токен та роль в AsyncStorage
+
           AsyncStorage.setItem('userToken', action.token);
           AsyncStorage.setItem('userRole', action.role);
           return { ...prevState, isSignout: false, userToken: action.token, userRole: action.role };
@@ -28,12 +28,11 @@ export default function App() {
       isLoading: true,
       isSignout: false,
       userToken: null,
-      userRole: null, // Додаємо поле для ролі
+      userRole: null, 
     }
   );
 
-  // Ініціалізація, відновлення токена з пам'яті
-  // ... (логіка useEffect для RESTORE_TOKEN)
+
 
   const authContext = useMemo(
     () => ({
