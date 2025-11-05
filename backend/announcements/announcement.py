@@ -5,55 +5,43 @@ from datetime import datetime
 
 router = APIRouter()
 
-# --- Pydantic Схеми ---
+# In-memory "БД"
+ANNOUNCEMENTS_DB = []
+current_id = 1
 
-# Модель для створення нового оголошення (вхідні дані)
 class AnnouncementCreate(BaseModel):
     title: str
     content: str
-    # Можна додати: image_url: Optional[str]
 
-# Модель для оголошення (вихідні дані)
-class Announcement(AnnouncementCreate):
+class Announcement(BaseModel):
     id: int
+    title: str
+    content: str
     author_role: str
     published_at: datetime
-    
-# --- Імітація Бази Даних ---
-# Початкові дані
-ANNOUNCEMENTS_DB = [
-    {
-        "id": 1,
-        "title": "Вітаємо у TopDentTeam!",
-        "content": "Будь ласка, ознайомтеся з новим графіком роботи на наступний тиждень. Він доступний у розділі 'Графік'.",
-        "author_role": "admin",
-        "published_at": datetime.now(),
-    },
-]
-current_id = 2
 
-# --- Роутери ---
-
-# 1. Отримати всі оголошення (для всіх користувачів)
 @router.get("/", response_model=List[Announcement])
-async def get_all_announcements():
-    # Повертаємо оголошення у зворотному хронологічному порядку
-    return sorted(ANNOUNCEMENTS_DB, key=lambda x: x["published_at"], reverse=True)
+async def list_announcements():
+    return ANNOUNCEMENTS_DB
 
-# 2. Створити нове оголошення (тільки для Admin)
-# У реальному проєкті тут має бути перевірка токена на роль 'admin'
-@router.post("/", response_model=Announcement)
+@router.post("/", response_model=Announcement, status_code=status.HTTP_201_CREATED)
 async def create_new_announcement(announcement: AnnouncementCreate):
     global current_id
-    
-    new_announcement = {
-        "id": current_id,
-        "title": announcement.title,
-        "content": announcement.content,
-        "author_role": "admin", # Завжди створюється адміністратором
-        "published_at": datetime.now(),
-    }
+    new_announcement = Announcement(
+        id=current_id,
+        title=announcement.title,
+        content=announcement.content,
+        author_role="admin",
+        published_at=datetime.now(),
+    )
     ANNOUNCEMENTS_DB.append(new_announcement)
     current_id += 1
-    
     return new_announcement
+
+@router.delete("/{announcement_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_announcement(announcement_id: int):
+    idx = next((i for i, a in enumerate(ANNOUNCEMENTS_DB) if a.id == announcement_id), -1)
+    if idx == -1:
+        raise HTTPException(status_code=404, detail="Announcement not found")
+    ANNOUNCEMENTS_DB.pop(idx)
+    return
