@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "TopDentTeam",
+    "slug": "topdentteam",
+    "scheme": "topdentteam",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": { "image": "./assets/splash.png", "resizeMode": "contain", "backgroundColor": "#0A4F9A" },
+    "updates": { "fallbackToCacheTimeout": 0 },
+    "assetBundlePatterns": ["**/*"],
+    "ios": { "supportsTablet": true, "bundleIdentifier": "com.example.topdentteam" },
+    "android": { "adaptiveIcon": { "foregroundImage": "./assets/adaptive-icon.png", "backgroundColor": "#FFFFFF" } },
+    "web": { "bundler": "metro" },
+    "extra": { "apiUrl": "http://192.168.0.10:8000", "googleClientId": "YOUR_CLIENT_ID.apps.googleusercontent.com" }
+  }
+}
