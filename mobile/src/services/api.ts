@@ -2,7 +2,11 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 
-const API_URL = (Constants.expoConfig?.extra as any)?.apiUrl || process.env.EXPO_PUBLIC_API_URL || "http://localhost:8000";
+const API_URL =
+  (Constants.expoConfig?.extra as any)?.apiUrl ||
+  process.env.EXPO_PUBLIC_API_URL ||
+  "http://localhost:8000";
+
 export const api = axios.create({ baseURL: API_URL });
 
 api.interceptors.request.use(async (cfg) => {
@@ -11,43 +15,88 @@ api.interceptors.request.use(async (cfg) => {
   return cfg;
 });
 
-export async function login(username: string, password: string){
-  const form = new URLSearchParams();
-  form.set("username", username);
-  form.set("password", password);
-  const { data } = await api.post("/auth/login", form, { headers: {"Content-Type":"application/x-www-form-urlencoded"} });
+// ---------- AUTH ----------
+
+export async function login(username: string, password: string) {
+  const { data } = await api.post("/auth/login", { username, password });
   await AsyncStorage.setItem("token", data.access_token);
+  await AsyncStorage.setItem("role", data.role);
   return data;
 }
 
-export async function register(email: string, password: string){
-  const { data } = await api.post("/auth/register", { email, password });
-  return data;
+export async function logout() {
+  await AsyncStorage.removeItem("token");
+  await AsyncStorage.removeItem("role");
 }
 
-export async function sendPhoneCode(phone: string){
-  const { data } = await api.post("/auth/phone/send", { phone });
-  return data;
-}
-
-export async function verifyPhone(phone: string, code: string){
-  const { data } = await api.post("/auth/phone/verify", { phone, code });
-  return data;
-}
-
-export async function oauthExchange(provider: "google"|"apple", id_token: string){
-  const { data } = await api.post("/auth/oauth", { provider, id_token });
-  await AsyncStorage.setItem("token", data.access_token);
-  return data;
-}
+// ---------- OMLUVENKY / DOVOLENÁ ----------
 
 export const omluvenky = {
-  list: () => api.get("/omluvenky/").then(r=>r.data),
-  create: (p:{title:string;reason?:string}) => api.post("/omluvenky/", p).then(r=>r.data),
-  setStatus: (id:number, status:"approved"|"denied"|"pending") => api.post(`/omluvenky/${id}/status/${status}`).then(r=>r.data),
+  list: () => api.get("/omluvenky/").then((r) => r.data),
+  detail: (id: number) => api.get(`/omluvenky/${id}`).then((r) => r.data),
+  create: (p: {
+    employee: string;
+    reason: string;
+    start_date: string;
+    end_date: string;
+    full_day?: boolean;
+    type?: "absence" | "vacation";
+  }) => api.post("/omluvenky/", p).then((r) => r.data),
+  setStatus: (
+    id: number,
+    status: "pending" | "approved" | "denied"
+  ) => api.post(`/omluvenky/${id}/status/${status}`).then((r) => r.data),
 };
 
+// ---------- EVENTS ----------
+
 export const events = {
-  list: () => api.get("/events/").then(r=>r.data),
-  create: (p:{title:string;date:string;description?:string}) => api.post("/events/", p).then(r=>r.data),
+  list: () => api.get("/events/").then((r) => r.data),
+  detail: (id: number) => api.get(`/events/${id}`).then((r) => r.data),
+  create: (p: {
+    title: string;
+    date: string;
+    location?: string;
+    description?: string;
+  }) => api.post("/events/", p).then((r) => r.data),
+  setStatus: (
+    id: number,
+    status: "waiting" | "going" | "not_going"
+  ) => api.post(`/events/${id}/status/${status}`).then((r) => r.data),
+};
+
+// ---------- COURSES ----------
+
+export const courses = {
+  list: () => api.get("/courses/").then((r) => r.data),
+  detail: (id: number) => api.get(`/courses/${id}`).then((r) => r.data),
+  create: (p: {
+    title: string;
+    description?: string;
+    date?: string;
+    lecturer?: string;
+    location?: string;
+  }) => api.post("/courses/", p).then((r) => r.data),
+};
+
+// ---------- CONTACTS ----------
+
+export const contacts = {
+  list: () => api.get("/contacts/").then((r) => r.data),
+  detail: (id: number) => api.get(`/contacts/${id}`).then((r) => r.data),
+  create: (p: {
+    name: string;
+    position?: string;
+    phone?: string;
+    email?: string;
+  }) => api.post("/contacts/", p).then((r) => r.data),
+};
+
+// ---------- GALLERY ----------
+
+export const gallery = {
+  list: () => api.get("/gallery/").then((r) => r.data),
+  detail: (id: number) => api.get(`/gallery/${id}`).then((r) => r.data),
+  create: (p: { title: string; image_url: string }) =>
+    api.post("/gallery/", p).then((r) => r.data),
 };
