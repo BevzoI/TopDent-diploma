@@ -1,0 +1,10 @@
+.home-page {}
+.home-page .page-content > .container {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.home-page .page-content .button-section {
+    flex: 0 1 calc(33.333% - 8px);
+}

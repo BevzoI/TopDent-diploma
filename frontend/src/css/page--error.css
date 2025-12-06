@@ -1,0 +1,8 @@
+.error-page {
+    text-align: center;
+}
+.error-page .page-error-img {
+    max-width: 160px;
+    width: 100%;
+    margin: 0 auto 20px;
+}

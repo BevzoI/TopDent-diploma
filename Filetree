@@ -1,0 +1,72 @@
+https://vercel.com/bevzois-projects/top-dent-diploma
+
+API: https://top-dent-diploma.vercel.app/
+
+Збираємо контейнер для docker
+docker-compose up --build -d
+
+
+
+
+
+
+
+Вибачення
+Дошка оголошень
+Новини
+Анкети
+Відпустка
+Курси
+Контакти
+Фотогалерея
+Події
+Додати
+??? Виплати
+
+
+
+CRUD ( Create, Read (One, All), Update, Delete )
+
+
+
+
+
+frontend
+ ┣ app
+ ┃ ┣ components
+ ┃ ┃ ┣ ui
+ ┃ ┃ ┃ ┗ Button.jsx
+ ┃ ┃ ┣ Header.jsx
+ ┃ ┃ ┗ Layout.jsx
+ ┃ ┣ pages
+ ┃ ┃ ┣ Add.jsx
+ ┃ ┃ ┣ Board.jsx
+ ┃ ┃ ┣ Contacts.jsx
+ ┃ ┃ ┣ Courses.jsx
+ ┃ ┃ ┣ Events.jsx
+ ┃ ┃ ┣ Gallery.jsx
+ ┃ ┃ ┣ Home.jsx
+ ┃ ┃ ┣ Messages.jsx
+ ┃ ┃ ┣ Omluvenka.jsx
+ ┃ ┃ ┣ Payslips.jsx
+ ┃ ┃ ┣ Surveys.jsx
+ ┃ ┃ ┗ Vacation.jsx
+ ┃ ┣ utils
+ ┃ ┃ ┗ utils.js
+ ┃ ┗ App.jsx
+ ┣ assets
+ ┃ ┣ adaptive-icon.png
+ ┃ ┣ favicon.png
+ ┃ ┣ icon.png
+ ┃ ┗ splash-icon.png
+ ┣ css
+ ┃ ┣ 0--main.css
+ ┃ ┣ block--header.css
+ ┃ ┗ style.css
+ ┣ .gitignore
+ ┣ app.json
+ ┣ babel.config.js
+ ┣ index.js
+ ┣ package-lock.json
+ ┣ package.json
+ ┗ tailwind.config.js

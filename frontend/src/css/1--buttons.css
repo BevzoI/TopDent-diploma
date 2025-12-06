@@ -1,0 +1,101 @@
+.btn {
+    --bg: var(--color-primary);
+    --color: var(--color-white);
+    --fz: 14px;
+    --padding: 10px 28px;
+    --bdrs: var(--bdrs-md);
+    --min-height: 40px;
+
+    --hover-bg: var(--color-primary-hover);
+    --hover-color: var(--color-white);
+    
+    background-color: var(--bg);
+    color: var(--color);
+    display: inline-flex;
+    align-items: center;
+	justify-content: center;
+    min-height: var(--min-height);
+    padding: var(--padding);
+    border-radius: var(--bdrs);
+    font-size: var(--fz);
+    font-weight: 500;
+    transition: 0.3s;
+    border: none;
+	cursor: pointer;
+	position: relative;
+}
+
+.btn:hover {
+    color: var(--hover-color);
+    background-color: var(--hover-bg);
+}
+
+
+.btn-icon {
+    width: var(--min-height);
+    padding: 0;
+}
+
+/* Sizes */
+.btn-sm {
+    --fz: 11px;
+    --padding: 2px 10px;
+    --min-height: 30px;
+}
+
+/* Colors */
+.btn-yellow {
+    --color: var(--color-black);
+    --hover-color: var(--color-black);
+    --bg: rgba(255, 251, 0, 0.68);
+    --hover-bg: rgba(222, 219, 10, 0.808);
+}
+.btn-green {
+    --color: var(--color-black);
+    --hover-color: var(--color-black);
+    --bg: #2fb28b;
+    --hover-bg: #249976;
+}
+.btn-red {
+    --color: var(--color-black);
+    --hover-color: var(--color-black);
+    --bg: #f00;
+    --hover-bg: rgb(207, 5, 5);
+}
+.btn-gray {
+    --color: var(--color-black);
+    --hover-color: var(--color-black);
+    --bg: #888;
+    --hover-bg: #777373;
+}
+
+
+
+.button-section {
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+}
+.button-section__icon-hold {
+    --size: 120px;
+
+    border-radius: var(--bdrs-lg);
+    background: rgba(0, 136, 255, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-width: 100px;
+    min-height: var(--size);
+    font-size: 88px;
+}
+.button-section__text-hold {
+}
+.button-section__text {
+    font-weight: 500;
+    font-size: 14px;
+    letter-spacing: 0.01em;
+    color: var(--color-black);
+    margin-top: 6px;
+    display: inline-block;
+}
