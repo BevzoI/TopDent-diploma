@@ -1,5 +1,4 @@
-// Базове посилання API з .env
-const BASE_URL = import.meta.env.VITE_API_URL;
+const BASE_URL = process.env.REACT_APP_API_URL;
 
 // Універсальний запит для JSON
 export async function apiRequest(url = "", method = "GET", data = null) {
@@ -54,5 +53,6 @@ export async function apiRequest(url = "", method = "GET", data = null) {
 export const apiUrl = {
   news: `${BASE_URL}/news`,
   auth: `${BASE_URL}/auth`,
+  users: `${BASE_URL}/users`,
 };
 

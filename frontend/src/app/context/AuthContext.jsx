@@ -43,11 +43,7 @@ export default function AuthContext({ children }) {
                 return;
             }
 
-            const payload = {
-                id: res.user.id,
-                email: res.user.email,
-                role: res.user.role,
-            };
+            const payload = res.user;
 
             const token = btoa(JSON.stringify(payload));
             localStorage.setItem("token", token);

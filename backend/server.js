@@ -6,19 +6,21 @@ import cors from 'cors';
 import connectDB from './db.js';
 import newsRouters from './routes/newsRouters.js';
 import authRouters from './routes/authRouters.js';
+import usersRouters from './routes/usersRouters.js';
 
 const app = express();
 
 await connectDB();
 
 app.use(cors()); // Використовуємо CORS з дозволом для всіх запитів
-app.use(bodyParser.json()); // Middleware для обробки JSON
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
 // Початок API
 app.get('/', (req, res) => { res.send('Api work!') }); // Health check
 app.use('/news', newsRouters);
 app.use('/auth', authRouters);
+app.use('/users', usersRouters);
 
 
 // Vercel або локальний режим

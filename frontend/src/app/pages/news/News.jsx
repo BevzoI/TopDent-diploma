@@ -90,8 +90,8 @@ export default function News() {
 
 
     return (
-        <div style={{ padding: 20 }}>
-            <h2 style={{ marginBottom: 20 }}>Nástěnka</h2>
+        <>
+            <h2 className='page-title'>Nástěnka</h2>
 
             <FlexboxGrid justify="start" align="top" gutter={20}>
                 {news.map((item) => (
@@ -132,7 +132,7 @@ export default function News() {
             {user?.role === "admin" && (
                 <Link to={siteUrls.addNews} className='btn btn-icon btn-admin-action-add'>+</Link>
             )}
-        </div>
+        </>
     );
 };
 

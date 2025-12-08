@@ -64,6 +64,12 @@ img {
 	padding: 100px 0 50px;
 }
 
+.page-title {
+	font-size: 32px;
+	font-weight: 600;
+	margin-bottom: 20px;
+}
+
 .text-center {
 	text-align: center;
 }

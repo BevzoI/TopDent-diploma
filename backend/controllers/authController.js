@@ -27,12 +27,14 @@ export async function auth (req, res) {
         });
     }
 
+    const userObj = user.toObject();
+    delete userObj.password;
+
     // Повертаємо тільки безпечні поля (без password)
     return res.json({
       user: {
         id: user._id,
-        email: user.email,
-        role: user.role,
+        ...userObj
       },
     });
   } catch (error) {
@@ -42,51 +44,5 @@ export async function auth (req, res) {
 };
 
 
-// -------------------------
-// Створення нового користувача
-// -------------------------
-export async function createUser(req, res) {
-  const { email, password, role } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({
-      status: "error",
-      message: "Email a heslo jsou povinné."
-    });
-  }
 
-  try {
-    // Перевіряємо, чи такий email вже існує
-    const exists = await User.findOne({ email });
-
-    if (exists) {
-      return res.status(400).json({
-        status: "error",
-        message: "Uživatel již existuje."
-      });
-    }
-
-    // Створюємо нового користувача
-    const newUser = await User.create({
-      email,
-      password, // ⚠️ пароль поки зберігається у відкритому вигляді (демо)
-      role: role || "user",
-    });
-
-    return res.json({
-      status: "success",
-      user: {
-        id: newUser._id,
-        email: newUser.email,
-        role: newUser.role,
-      },
-    });
-
-  } catch (error) {
-    console.error("Create user error:", error);
-    return res.status(500).json({
-      status: "error",
-      message: "Chyba serveru při vytváření uživatele."
-    });
-  }
-}

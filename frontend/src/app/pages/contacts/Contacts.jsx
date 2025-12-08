@@ -1,0 +1,153 @@
+import { useEffect, useState } from "react";
+import { Link, useOutletContext } from "react-router-dom";
+import { Image, Grid, Row, Col, Panel, Loader, Message } from "rsuite";
+import { apiRequest, apiUrl } from "../../utils/apiData";
+import { useAuthContext } from "../../context/AuthContext";
+import Swal from "sweetalert2";
+import { filePath, siteUrls } from "../../utils/siteUrls";
+
+export default function Contacts() {
+  const { user } = useAuthContext();
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const { setHeaderData } = useOutletContext();
+
+  useEffect(() => {
+    setHeaderData({
+      title: "Seznam uživatelů",
+    });
+  }, [setHeaderData]);
+
+  const fetchUsers = async () => {
+    try {
+      const data = await apiRequest(apiUrl.users);
+
+      if (data.status === "success") {
+        setUsers(data.users);
+      } else {
+        setError(data.message || "Nepodařilo se načíst uživatele");
+      }
+    } catch (e) {
+      setError("Chyba při načítání uživatelů");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  if (loading) {
+    return <Loader size="lg" content="Nahrávání..." />;
+  }
+
+  if (error) {
+    return (
+      <Message type="error" showIcon style={{ margin: 20 }}>
+        {error}
+      </Message>
+    );
+  }
+
+  // DELETE USER
+  const deleteUser = async (id) => {
+    const result = await Swal.fire({
+      title: "Opravdu chcete smazat uživatele?",
+      text: "Tato akce je nevratná.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Ano, smazat",
+      cancelButtonText: "Zrušit",
+    });
+
+    if (!result.isConfirmed) return;
+
+    const res = await apiRequest(`${apiUrl.users}/${id}`, "DELETE");
+
+    if (res?.status === "success") {
+      setUsers((prev) => prev.filter((u) => u.id !== id));
+
+      Swal.fire({
+        title: "Smazáno!",
+        text: "Uživatel byl úspěšně odstraněn.",
+        icon: "success",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+    } else {
+      Swal.fire({
+        title: "Chyba",
+        text: "Nepodařilo se smazat uživatele.",
+        icon: "error",
+        confirmButtonText: "OK",
+      });
+    }
+  };
+
+  return (
+    <>
+      <h2 className="page-title">Seznam uživatelů</h2>
+
+      <Grid fluid>
+        <Row gutter={20}>
+          {users.map((u) => {
+            const avatar = u.avatar?.includes("cloudinary")
+              ? u.avatar
+              : filePath.avatars + (u.avatar || "AV1.webp");
+
+            return (
+              <Col key={u.id} xs={24} sm={12} md={8} lg={6} className="mb-20">
+                <Panel bordered shaded className="card-user">
+                  <Image src={avatar} alt={u.email} className="card-user__avatar" />
+                  <div className="card-user__info">
+                    <div className="card-user__info-item">
+                      <div className="card-user__info-item-label">Role:</div>
+                      <div className="card-user__info-item-value">{u.role}</div>
+                    </div>
+                    <div className="card-user__info-item">
+                      <div className="card-user__info-item-label">Email:</div>
+                      <div className="card-user__info-item-value">{u.email}</div>
+                    </div>
+                    <div className="card-user__info-item">
+                      <div className="card-user__info-item-label">Telefon:</div>
+                      <div className="card-user__info-item-value">{u.phone || "—"}</div>
+                    </div>
+                  </div>
+
+                  {user?.role === "admin" && (
+                    <div className="admin-actions">
+                      <Link
+                        to={siteUrls.editContacts(u.id)}
+                        className="btn btn-sm btn-green"
+                      >
+                        Upravit
+                      </Link>
+
+                      <button
+                        className="btn btn-sm btn-red"
+                        onClick={() => deleteUser(u.id)}
+                      >
+                        Smazat
+                      </button>
+                    </div>
+                  )}
+                </Panel>
+              </Col>
+            );
+          })}
+        </Row>
+      </Grid>
+
+      {user?.role === "admin" && (
+        <Link to={siteUrls.addContacts} className="btn btn-icon btn-admin-action-add">
+          +
+        </Link>
+      )}
+    </>
+  );
+}

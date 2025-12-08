@@ -1,4 +1,4 @@
-import { lazy, useState } from "react";
+import { lazy } from "react";
 import { Routes, Route, BrowserRouter } from "react-router-dom";
 import Layout from "./pages/Layout";
 import BodyClass from "./components/layout/BodyClass";
@@ -11,6 +11,9 @@ const Omluvenky = lazy(() => import("./pages/Omluvenky"));
 const Vyplatnipaska = lazy(() => import("./pages/VyplatniPaska"));
 const News = lazy(() => import("./pages/news/News"));
 const NewsForm = lazy(() => import("./pages/news/NewsForm"));
+const UserEdit = lazy(() => import("./pages/UserEdit"));
+const Contacts = lazy(() => import("./pages/contacts/Contacts"));
+const ContactsForm = lazy(() => import("./pages/contacts/ContactsForm"));
 
 function AppRoutes() {
   return (
@@ -24,11 +27,15 @@ function AppRoutes() {
           <Route path="add" element={<NewsForm />} />
           <Route path="edit/:id" element={<NewsForm />} />
         </Route>
+        <Route path="contacts">
+          <Route index element={<Contacts />} />
+          <Route path="add" element={<ContactsForm />} />
+          <Route path="edit/:id" element={<ContactsForm />} />
+        </Route>
         {/* <Route path="zpravy" element={<zpravy />} /> */}
         {/* <Route path="dotazniky" element={<dotazniky />} /> */}
         {/* <Route path="dovolena" element={<dovolena />} /> */}
         {/* <Route path="kurzy" element={<kurzy />} /> */}
-        {/* <Route path="kontakty" element={<kontakty />} /> */}
         {/* <Route path="fotogalerie" element={<fotogalerie />} /> */}
         {/* <Route path="akce" element={<akce />} /> */}
         {/* <Route path="pridat" element={<pridat />} /> */}

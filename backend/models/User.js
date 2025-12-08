@@ -17,9 +17,19 @@ const userSchema = new mongoose.Schema({
         enum: ["admin", "user"],
         default: "user",
     },
+    avatar: {
+        type: String,
+        default: null,
+    },
+    phone: {
+        type: String,
+        default: "",
+    }
+
 }, {
     timestamps: true
 });
+
 
 const User = mongoose.model("User", userSchema);
 

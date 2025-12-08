@@ -53,3 +53,39 @@
 .card__body-right {
     padding-right: 8px;
 }
+
+
+
+.card-user {
+    position: relative;
+}
+.card-user .rs-panel-body {
+    padding-right: 80px;
+}
+
+.card-user .card-user__avatar {
+    --size: 50px;
+    width: var(--size);
+    height: var(--size);
+    border-radius: 50%;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}
+.card-user .card-user__info {
+    font-size: 14px;
+    color: var(--color-black);
+}
+.card-user .card-user__info-item {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.card-user .card-user__info-item-label {}
+.card-user .card-user__info-item-value {
+    font-weight: 600;
+    max-width: 60%;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
