@@ -36,12 +36,12 @@ export default function AuthContext({ children }) {
         const login = async () => {
             const res = await apiRequest(apiUrl.auth, "POST", { email, password });
 
-            // if (!res || res.status === "error" || !res.user) {
-            //     localStorage.removeItem("token");
-            //     setUser(null);
-            //     window.location.href = "/goodbye-user";
-            //     return;
-            // }
+            if (!res || res.status === "error" || !res.user) {
+                localStorage.removeItem("token");
+                setUser(null);
+                window.location.href = "/goodbye-user";
+                return;
+            }
 
             const payload = res.user;
 
