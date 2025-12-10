@@ -1,9 +1,11 @@
+
+Збираємо контейнер для docker
+docker-compose up --build -d
+
 https://vercel.com/bevzois-projects/top-dent-diploma
 
 API: https://top-dent-diploma.vercel.app/
 
-Збираємо контейнер для docker
-docker-compose up --build -d
 
 
 

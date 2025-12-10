@@ -1,3 +1,19 @@
+.rs-picker .rs-picker-toggle {
+    width: 100%;
+}
+
+.header-prev {
+    padding-left: 0;
+    margin-left: -3px;
+    transition: 0.3s;
+}
+.header-prev:hover {
+    margin-left: 0;
+    padding-left: 12px;
+}
+
+
+
 .admin-actions {
     margin-top: 10px;
     display: flex;
@@ -15,6 +31,10 @@
     z-index: 9999;
     font-size: 20px;
     border-radius: 50%;
+}
+.btn-admin-action-add:focus,
+.btn-admin-action-add:active {
+    color: var(--color-white);
 }
 
 

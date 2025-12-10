@@ -11,9 +11,15 @@ const Omluvenky = lazy(() => import("./pages/Omluvenky"));
 const Vyplatnipaska = lazy(() => import("./pages/VyplatniPaska"));
 const News = lazy(() => import("./pages/news/News"));
 const NewsForm = lazy(() => import("./pages/news/NewsForm"));
-const UserEdit = lazy(() => import("./pages/UserEdit"));
 const Contacts = lazy(() => import("./pages/contacts/Contacts"));
 const ContactsForm = lazy(() => import("./pages/contacts/ContactsForm"));
+const ChatList = lazy(() => import("./pages/chat/ChatList"));
+const ChatView = lazy(() => import("./pages/chat/ChatView"));
+const ChatForm = lazy(() => import("./pages/chat/ChatForm"));
+const CoursesList = lazy(() => import("./pages/courses/CoursesList"));
+const CourseForm = lazy(() => import("./pages/courses/CourseForm"));
+const CourseChoice = lazy(() => import("./pages/courses/CourseChoice"));
+
 
 function AppRoutes() {
   return (
@@ -32,14 +38,18 @@ function AppRoutes() {
           <Route path="add" element={<ContactsForm />} />
           <Route path="edit/:id" element={<ContactsForm />} />
         </Route>
-        {/* <Route path="zpravy" element={<zpravy />} /> */}
-        {/* <Route path="dotazniky" element={<dotazniky />} /> */}
-        {/* <Route path="dovolena" element={<dovolena />} /> */}
-        {/* <Route path="kurzy" element={<kurzy />} /> */}
-        {/* <Route path="fotogalerie" element={<fotogalerie />} /> */}
-        {/* <Route path="akce" element={<akce />} /> */}
-        {/* <Route path="pridat" element={<pridat />} /> */}
-
+        <Route path="chat">
+          <Route index element={<ChatList />} />
+          <Route path=":id" element={<ChatView />} />
+          <Route path="create" element={<ChatForm />} />
+          <Route path="edit/:id" element={<ChatForm />} />
+        </Route>
+        <Route path="courses">
+          <Route index element={<CoursesList />} />
+          <Route path="choice/:id" element={<CourseChoice />} />
+          <Route path="add" element={<CourseForm />} />
+          <Route path="edit/:id" element={<CourseForm />} />
+        </Route>
         <Route path="*" element={<ErrorPage />} />
       </Route>
     </Routes>

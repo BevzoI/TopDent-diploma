@@ -14,11 +14,11 @@ export default function Home() {
   const buttons = [
     { icon: "icon-1",  text: "Omluvenky",        to: "/omluvenky" },
     { icon: "icon-2",  text: "Nástěnka",         to: "/news" },
-    { icon: "icon-3",  text: "Zprávy",           to: "/zpravy" },
+    { icon: "icon-3",  text: "Zprávy",           to: "/chat" },
     { icon: "icon-4",  text: "Dotazníky",        to: "/dotazniky" },
     // { icon: "icon-5",  text: "Dovolená",         to: "/dovolena" },
     // { icon: "icon-6",  text: "Výplatní páska",   to: "/vyplatni-paska" },
-    { icon: "icon-7",  text: "Kurzy",            to: "/kurzy" },
+    { icon: "icon-7",  text: "Kurzy",            to: "/courses" },
     { icon: "icon-8",  text: "Kontakty",         to: "/contacts" },
     // { icon: "icon-9",  text: "Fotogalerie",      to: "/fotogalerie" },
     { icon: "icon-10", text: "Akce",             to: "/akce" },

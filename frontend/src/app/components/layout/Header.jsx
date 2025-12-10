@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import Img from '../ui/Img';
 import { useAuthContext } from '../../context/AuthContext';
-import { Tooltip, Whisper } from 'rsuite';
+import { Badge, Avatar, Tooltip, Whisper } from 'rsuite';
 import { filePath, siteUrls } from '../../utils/siteUrls';
 import { getUserAvatar } from '../../utils/utils';
 
@@ -26,10 +26,9 @@ export default function Header({ headerData }) {
             trigger="hover"
             speaker={<Tooltip>{email}</Tooltip>}
           >
-            <div className="header__user-avatar" title={email}>
-              <Img src={getUserAvatar(user) + "?v=" + Date.now()} alt="User" className='header__user-img' />
-
-            </div>
+            <Badge content={6} placement="topStart">
+              <Avatar circle src={getUserAvatar(user) + "?v=" + Date.now()} />
+            </Badge>
           </Whisper>
         </Link>
 

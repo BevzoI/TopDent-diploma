@@ -5,6 +5,7 @@ import { apiRequest, apiUrl } from '../../utils/apiData';
 import { useAuthContext } from '../../context/AuthContext';
 import Swal from "sweetalert2";
 import { siteUrls } from '../../utils/siteUrls';
+import ButtonAdd from '../../components/ui/admin/ButtonAdd';
 
 export default function News() {
     const { user } = useAuthContext();
@@ -129,9 +130,8 @@ export default function News() {
                 ))}
             </FlexboxGrid>
 
-            {user?.role === "admin" && (
-                <Link to={siteUrls.addNews} className='btn btn-icon btn-admin-action-add'>+</Link>
-            )}
+
+            <ButtonAdd link={siteUrls.addNews} />
         </>
     );
 };

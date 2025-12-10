@@ -5,6 +5,7 @@ import { apiRequest, apiUrl } from "../../utils/apiData";
 import { useAuthContext } from "../../context/AuthContext";
 import Swal from "sweetalert2";
 import { filePath, siteUrls } from "../../utils/siteUrls";
+import { ButtonAdd } from '../../components/ui';
 
 export default function Contacts() {
   const { user } = useAuthContext();
@@ -143,11 +144,7 @@ export default function Contacts() {
         </Row>
       </Grid>
 
-      {user?.role === "admin" && (
-        <Link to={siteUrls.addContacts} className="btn btn-icon btn-admin-action-add">
-          +
-        </Link>
-      )}
+      <ButtonAdd link={siteUrls.addContacts} />
     </>
   );
 }
