@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { ButtonSection } from "../components/ui";
 import { useOutletContext } from "react-router-dom";
+import { pagesList } from "../data/Pages";
 
 export default function Home() {
     const { setHeaderData } = useOutletContext();
@@ -11,23 +12,9 @@ export default function Home() {
         });
     }, [setHeaderData]);
 
-  const buttons = [
-    { icon: "icon-1",  text: "Omluvenky",        to: "/omluvenky" },
-    { icon: "icon-2",  text: "Nástěnka",         to: "/news" },
-    { icon: "icon-3",  text: "Zprávy",           to: "/chat" },
-    { icon: "icon-4",  text: "Dotazníky",        to: "/dotazniky" },
-    // { icon: "icon-5",  text: "Dovolená",         to: "/dovolena" },
-    // { icon: "icon-6",  text: "Výplatní páska",   to: "/vyplatni-paska" },
-    { icon: "icon-7",  text: "Kurzy",            to: "/courses" },
-    { icon: "icon-8",  text: "Kontakty",         to: "/contacts" },
-    // { icon: "icon-9",  text: "Fotogalerie",      to: "/fotogalerie" },
-    { icon: "icon-10", text: "Akce",             to: "/akce" },
-    { icon: "icon-11", text: "Přidat",           to: "/pridat" },
-  ];
-
   return (
     <>
-      {buttons.map(({ icon, text, to }, i) => (
+      {pagesList.map(({ icon, text, to }, i) => (
         <ButtonSection
           key={i}
           icon={icon}

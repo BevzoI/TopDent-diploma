@@ -122,7 +122,7 @@ export async function getUserById(req, res) {
 export async function updateUserById(req, res) {
   try {
     const { id } = req.params;
-    const { email, phone, role, avatar, password } = req.body;
+    const { name, clinic, birthDate, email, phone, role, avatar, password } = req.body;
 
     // ADMIN CHECK
     const userRole = req.headers["x-user-role"];
@@ -137,6 +137,10 @@ export async function updateUserById(req, res) {
 
     if (email) updateData.email = email.trim();
     if (phone) updateData.phone = phone.trim();
+    if (name !== undefined) updateData.name = name.trim();
+    if (clinic !== undefined) updateData.clinic = clinic.trim();
+    if (birthDate !== undefined) updateData.birthDate = birthDate || null;
+
 
     // Pokud admin upravuje sebe → nesmí změnit roli
     if (role && req.userId !== id) {
@@ -182,6 +186,9 @@ export async function updateUserById(req, res) {
         role: updatedUser.role,
         phone: updatedUser.phone,
         avatar: updatedUser.avatar,
+        name: updatedUser.name,
+        clinic: updatedUser.clinic,
+        birthDate: updatedUser.birthDate,
       },
     });
 

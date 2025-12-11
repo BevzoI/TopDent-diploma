@@ -1,17 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import {
-  Form,
-  Button,
-  ButtonToolbar,
-  Input,
-  SelectPicker,
-  DatePicker,
-  Message,
-} from "rsuite";
-
-import { Controller, useForm } from "react-hook-form";
+import { Form, Button, ButtonToolbar, Input, SelectPicker, Message } from "rsuite";
+import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 
@@ -25,17 +16,18 @@ const publishOptions = [
   { label: "Skrýt", value: "hide" },
 ];
 
-// Validation schema
+// Validation
 const schema = yup.object({
-  title: yup.string().required("Název je povinný"),
+  title: yup.string().required("Text otázky je povinný"),
   description: yup.string().nullable(),
-  location: yup.string().nullable(),
-  dateTime: yup.date().required("Datum a čas jsou povinné"),
   publish: yup.string().oneOf(["show", "hide"]).required(),
-  users: yup.array().of(yup.string()).min(1, "Vyberte alespoň jednoho uživatele"),
+  users: yup
+    .array()
+    .of(yup.string().required())
+    .min(1, "Vyberte alespoň jednoho uživatele"),
 });
 
-export default function CourseForm() {
+export default function PollForm() {
   const { id } = useParams();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
@@ -48,107 +40,112 @@ export default function CourseForm() {
     control,
     handleSubmit,
     formState: { errors, isSubmitting },
-    reset,
+    reset
   } = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
       title: "",
       description: "",
-      location: "",
-      dateTime: null,
       publish: "hide",
       users: [],
     },
   });
 
-  // Load users for SelectPicker
+  // Load all users for selector
   useEffect(() => {
     const loadUsers = async () => {
-      const res = await apiRequest(apiUrl.users);
+      const res = await apiRequest(apiUrl.users); // GET /users
 
       if (res?.users) {
         const formatted = res.users.map((u) => ({
-          label: u.name || u.email,
+          label: u.email || u.id,
           value: u._id,
         }));
 
-        setUsersList([
+        const fullList = [
           { label: "Všichni uživatelé", value: "ALL" },
           ...formatted,
-        ]);
+        ];
+
+        setUsersList(fullList);
       }
     };
 
     loadUsers();
   }, []);
 
-  // Load course for edit
+  // Load poll for edit
   useEffect(() => {
     if (!isEdit) return;
 
-    const loadCourse = async () => {
-      const res = await apiRequest(`${apiUrl.courses}/${id}`, "GET");
+    const loadPoll = async () => {
+      const res = await apiRequest(`${apiUrl.poll}/${id}`, "GET");
 
       if (res?.status === "success") {
-        const item = res.data;
+        let selectedUsers = res.data.users || [];
 
-        let selectedUsers = item.users || [];
-        if (selectedUsers.length === 0) selectedUsers = ["ALL"];
+        // Pokud users = [] → ALL
+        if (selectedUsers.length === 0) {
+          selectedUsers = ["ALL"];
+        }
 
         reset({
-          title: item.title,
-          description: item.description || "",
-          location: item.location || "",
-          dateTime: item.dateTime ? new Date(item.dateTime) : null,
-          publish: item.publish,
+          title: res.data.title,
+          description: res.data.description || "",
+          publish: res.data.publish,
           users: selectedUsers,
-        });
+        });        
+      } else {
+        setApiError("Nepodařilo se načíst data.");
       }
     };
 
-    loadCourse();
-  }, [isEdit, id, reset]);
+    loadPoll();
+  }, [id, isEdit, reset]);
 
-  // Submit handler
+  // Submit
   const onSubmit = async (values) => {
     setApiError("");
     setApiSuccess("");
 
     let selectedUsers = values.users;
-    if (selectedUsers.includes("ALL")) selectedUsers = [];
+
+    // Pokud obsažen ALL → všichni uživatelé → users = []
+    if (selectedUsers.includes("ALL")) {
+      selectedUsers = [];
+    }
 
     const payload = {
       title: values.title.trim(),
       description: values.description?.trim() || "",
-      location: values.location?.trim() || "",
-      dateTime: values.dateTime,
       publish: values.publish,
       users: selectedUsers,
-    };
+    };    
 
-    let url = apiUrl.courses;
+    let url = apiUrl.poll;
     let method = "POST";
 
     if (isEdit) {
-      url = `${apiUrl.courses}/${id}`;
+      url = `${apiUrl.poll}/${id}`;
       method = "PATCH";
     }
 
     const res = await apiRequest(url, method, payload);
 
-    if (res?.status === "success") {
-      setApiSuccess("Uloženo.");
-      setTimeout(() => navigate(siteUrls.courses), 600);
-    } else {
-      setApiError(res?.message || "Chyba při ukládání.");
+    if (!res || res.status !== "success") {
+      setApiError(res?.message || "Nepodařilo se uložit.");
+      return;
     }
+
+    setApiSuccess("Úspěšně uloženo.");
+    setTimeout(() => navigate(siteUrls.poll), 700);
   };
 
   return (
     <Form fluid onSubmit={handleSubmit(onSubmit)}>
       <PageHeader
-        title={isEdit ? "Upravit kurz" : "Nový kurz"}
-        backTo={siteUrls.courses}
+        title={isEdit ? "Upravit otázku" : "Vytvořit novou otázku"}
+        backTo={siteUrls.poll}
       />
 
       {apiError && (
@@ -156,72 +153,54 @@ export default function CourseForm() {
           {apiError}
         </Message>
       )}
+
       {apiSuccess && (
         <Message type="success" showIcon style={{ marginBottom: 15 }}>
           {apiSuccess}
         </Message>
       )}
 
-      {/* TITLE */}
+      {/* Title */}
       <Form.Group>
-        <Form.ControlLabel>Název kurzu</Form.ControlLabel>
+        <Form.ControlLabel>Text otázky</Form.ControlLabel>
         <Controller
           name="title"
           control={control}
-          render={({ field }) => <Input {...field} placeholder="Název kurzu" />}
+          render={({ field }) => (
+            <Input {...field} placeholder="Zadejte otázku..." />
+          )}
         />
-        {errors.title && <Message type="error">{errors.title.message}</Message>}
+        {errors.title && (
+          <Message type="error" style={{ marginTop: 6 }}>
+            {errors.title.message}
+          </Message>
+        )}
       </Form.Group>
 
-      {/* DESCRIPTION */}
+      {/* Description */}
       <Form.Group>
-        <Form.ControlLabel>Popis</Form.ControlLabel>
+        <Form.ControlLabel>Popis otázky (nepovinné)</Form.ControlLabel>
         <Controller
           name="description"
           control={control}
           render={({ field }) => (
-            <Input {...field} as="textarea" rows={3} placeholder="Krátký popis" />
-          )}
-        />
-      </Form.Group>
-
-      {/* LOCATION */}
-      <Form.Group>
-        <Form.ControlLabel>Místo konání</Form.ControlLabel>
-        <Controller
-          name="location"
-          control={control}
-          render={({ field }) => (
-            <Input {...field} placeholder="Adresa nebo místo konání" />
-          )}
-        />
-      </Form.Group>
-
-      {/* DATE & TIME */}
-      <Form.Group>
-        <Form.ControlLabel>Datum a čas</Form.ControlLabel>
-        <Controller
-          name="dateTime"
-          control={control}
-          render={({ field }) => (
-            <DatePicker
-              format="dd.MM.yyyy HH:mm"
-              ranges={[]}
-              showMeridian={false}
-              style={{ width: "100%" }}
-              value={field.value}
-              onChange={field.onChange}
-              placeholder="Vyberte datum a čas"
-              oneTap
+            <Input
+              {...field}
+              as="textarea"
+              rows={3}
+              placeholder="Krátký popis nebo doplňující informace…"
             />
           )}
         />
-        {errors.dateTime && (
-          <Message type="error">{errors.dateTime.message}</Message>
+        {errors.description && (
+          <Message type="error" style={{ marginTop: 6 }}>
+            {errors.description.message}
+          </Message>
         )}
       </Form.Group>
 
-      {/* PUBLISH */}
+
+      {/* Publish */}
       <Form.Group>
         <Form.ControlLabel>Zobrazení</Form.ControlLabel>
         <Controller
@@ -230,19 +209,23 @@ export default function CourseForm() {
           render={({ field }) => (
             <SelectPicker
               data={publishOptions}
+              cleanable={false}
+              searchable={false}
               value={field.value}
               onChange={field.onChange}
-              searchable={false}
-              cleanable={false}
-              style={{ width: "100%" }}
             />
           )}
         />
+        {errors.publish && (
+          <Message type="error" style={{ marginTop: 6 }}>
+            {errors.publish.message}
+          </Message>
+        )}
       </Form.Group>
 
-      {/* USERS */}
+      {/* Users */}
       <Form.Group>
-        <Form.ControlLabel>Kdo uvidí kurz?</Form.ControlLabel>
+        <Form.ControlLabel>Kdo uvidí otázku?</Form.ControlLabel>
         <Controller
           name="users"
           control={control}
@@ -255,6 +238,7 @@ export default function CourseForm() {
               searchable
               multiple
               onChange={(val) => {
+                // Pokud ALL → pak jen ALL
                 if (val.includes("ALL")) {
                   field.onChange(["ALL"]);
                 } else {
@@ -264,14 +248,18 @@ export default function CourseForm() {
             />
           )}
         />
-        {errors.users && <Message type="error">{errors.users.message}</Message>}
+        {errors.users && (
+          <Message type="error" style={{ marginTop: 6 }}>
+            {errors.users.message}
+          </Message>
+        )}
       </Form.Group>
 
-      <ButtonToolbar>
+      <ButtonToolbar style={{ marginTop: 12 }}>
         <Button appearance="primary" loading={isSubmitting} type="submit">
           {isEdit ? "Uložit změny" : "Vytvořit"}
         </Button>
-        <Button appearance="subtle" onClick={() => navigate(siteUrls.courses)}>
+        <Button appearance="subtle" onClick={() => navigate(siteUrls.poll)}>
           Zpět
         </Button>
       </ButtonToolbar>

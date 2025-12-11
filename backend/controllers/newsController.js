@@ -1,4 +1,5 @@
-import News from '../models/News.js';
+import News from "../models/News.js";
+import User from "../models/User.js";
 
 // GET all
 export const getAllNews = async (req, res) => {
@@ -9,6 +10,10 @@ export const getAllNews = async (req, res) => {
     const query = role === "admin" ? {} : { publish: "show" };
 
     const items = await News.find(query).sort({ createdAt: -1 });
+
+    await User.findByIdAndUpdate(req.headers["x-user-id"], {
+      lastNewsCheck: new Date(),
+    });
 
     return res.json({
       status: "success",
@@ -21,7 +26,6 @@ export const getAllNews = async (req, res) => {
     });
   }
 };
-
 
 // GET one
 export const getOneNews = async (req, res) => {
@@ -46,7 +50,6 @@ export const getOneNews = async (req, res) => {
     });
   }
 };
-
 
 // POST create
 export const createNews = async (req, res) => {

@@ -29,13 +29,13 @@ const publishOptions = [
 const schema = yup.object({
   title: yup.string().required("Název je povinný"),
   description: yup.string().nullable(),
-  location: yup.string().nullable(),
+  address: yup.string().nullable(),
   dateTime: yup.date().required("Datum a čas jsou povinné"),
   publish: yup.string().oneOf(["show", "hide"]).required(),
   users: yup.array().of(yup.string()).min(1, "Vyberte alespoň jednoho uživatele"),
 });
 
-export default function CourseForm() {
+export default function EventForm() {
   const { id } = useParams();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
@@ -54,7 +54,7 @@ export default function CourseForm() {
     defaultValues: {
       title: "",
       description: "",
-      location: "",
+      address: "",
       dateTime: null,
       publish: "hide",
       users: [],
@@ -82,31 +82,31 @@ export default function CourseForm() {
     loadUsers();
   }, []);
 
-  // Load course for edit
+  // Load event for edit
   useEffect(() => {
     if (!isEdit) return;
 
-    const loadCourse = async () => {
-      const res = await apiRequest(`${apiUrl.courses}/${id}`, "GET");
+    const loadEvent = async () => {
+      const res = await apiRequest(`${apiUrl.events}/${id}`, "GET");
 
       if (res?.status === "success") {
-        const item = res.data;
+        const ev = res.data;
 
-        let selectedUsers = item.users || [];
+        let selectedUsers = ev.users || [];
         if (selectedUsers.length === 0) selectedUsers = ["ALL"];
 
         reset({
-          title: item.title,
-          description: item.description || "",
-          location: item.location || "",
-          dateTime: item.dateTime ? new Date(item.dateTime) : null,
-          publish: item.publish,
+          title: ev.title,
+          description: ev.description || "",
+          address: ev.address || "",
+          dateTime: ev.dateTime ? new Date(ev.dateTime) : null,
+          publish: ev.publish,
           users: selectedUsers,
         });
       }
     };
 
-    loadCourse();
+    loadEvent();
   }, [isEdit, id, reset]);
 
   // Submit handler
@@ -120,17 +120,17 @@ export default function CourseForm() {
     const payload = {
       title: values.title.trim(),
       description: values.description?.trim() || "",
-      location: values.location?.trim() || "",
+      address: values.address?.trim() || "",
       dateTime: values.dateTime,
       publish: values.publish,
       users: selectedUsers,
     };
 
-    let url = apiUrl.courses;
+    let url = apiUrl.events;
     let method = "POST";
 
     if (isEdit) {
-      url = `${apiUrl.courses}/${id}`;
+      url = `${apiUrl.events}/${id}`;
       method = "PATCH";
     }
 
@@ -138,7 +138,7 @@ export default function CourseForm() {
 
     if (res?.status === "success") {
       setApiSuccess("Uloženo.");
-      setTimeout(() => navigate(siteUrls.courses), 600);
+      setTimeout(() => navigate(siteUrls.events), 600);
     } else {
       setApiError(res?.message || "Chyba při ukládání.");
     }
@@ -147,8 +147,8 @@ export default function CourseForm() {
   return (
     <Form fluid onSubmit={handleSubmit(onSubmit)}>
       <PageHeader
-        title={isEdit ? "Upravit kurz" : "Nový kurz"}
-        backTo={siteUrls.courses}
+        title={isEdit ? "Upravit událost" : "Nová událost"}
+        backTo={siteUrls.events}
       />
 
       {apiError && (
@@ -164,11 +164,11 @@ export default function CourseForm() {
 
       {/* TITLE */}
       <Form.Group>
-        <Form.ControlLabel>Název kurzu</Form.ControlLabel>
+        <Form.ControlLabel>Název</Form.ControlLabel>
         <Controller
           name="title"
           control={control}
-          render={({ field }) => <Input {...field} placeholder="Název kurzu" />}
+          render={({ field }) => <Input {...field} placeholder="Název události" />}
         />
         {errors.title && <Message type="error">{errors.title.message}</Message>}
       </Form.Group>
@@ -185,14 +185,14 @@ export default function CourseForm() {
         />
       </Form.Group>
 
-      {/* LOCATION */}
+      {/* ADDRESS */}
       <Form.Group>
-        <Form.ControlLabel>Místo konání</Form.ControlLabel>
+        <Form.ControlLabel>Adresa</Form.ControlLabel>
         <Controller
-          name="location"
+          name="address"
           control={control}
           render={({ field }) => (
-            <Input {...field} placeholder="Adresa nebo místo konání" />
+            <Input {...field} placeholder="Adresa konání události" />
           )}
         />
       </Form.Group>
@@ -207,7 +207,6 @@ export default function CourseForm() {
             <DatePicker
               format="dd.MM.yyyy HH:mm"
               ranges={[]}
-              showMeridian={false}
               style={{ width: "100%" }}
               value={field.value}
               onChange={field.onChange}
@@ -242,7 +241,7 @@ export default function CourseForm() {
 
       {/* USERS */}
       <Form.Group>
-        <Form.ControlLabel>Kdo uvidí kurz?</Form.ControlLabel>
+        <Form.ControlLabel>Kdo uvidí událost?</Form.ControlLabel>
         <Controller
           name="users"
           control={control}
@@ -264,14 +263,13 @@ export default function CourseForm() {
             />
           )}
         />
-        {errors.users && <Message type="error">{errors.users.message}</Message>}
       </Form.Group>
 
       <ButtonToolbar>
         <Button appearance="primary" loading={isSubmitting} type="submit">
           {isEdit ? "Uložit změny" : "Vytvořit"}
         </Button>
-        <Button appearance="subtle" onClick={() => navigate(siteUrls.courses)}>
+        <Button appearance="subtle" onClick={() => navigate(siteUrls.events)}>
           Zpět
         </Button>
       </ButtonToolbar>

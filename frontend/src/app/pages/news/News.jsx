@@ -6,6 +6,8 @@ import { useAuthContext } from '../../context/AuthContext';
 import Swal from "sweetalert2";
 import { siteUrls } from '../../utils/siteUrls';
 import ButtonAdd from '../../components/ui/admin/ButtonAdd';
+import { PageHeader } from '../../components/ui';
+import { formatDate } from '../../utils/utils';
 
 export default function News() {
     const { user } = useAuthContext();
@@ -92,7 +94,11 @@ export default function News() {
 
     return (
         <>
-            <h2 className='page-title'>Nástěnka</h2>
+            <PageHeader
+                title="Nástěnka"
+                backTo={siteUrls.home}
+                headingLevel={2}
+            />
 
             <FlexboxGrid justify="start" align="top" gutter={20}>
                 {news.map((item) => (
@@ -105,10 +111,10 @@ export default function News() {
                     >
                         <Panel bordered shaded style={{ marginBottom: 20, height: '100%' }}>
                             <h4 style={{ marginBottom: 10 }}>{item.title}</h4>
-                            <p style={{ minHeight: 70 }}>{item.text}</p>
+                            <p className='mb-12'>{item.text}</p>
 
                             <p style={{ fontSize: 12, color: '#999' }}>
-                                Zveřejněno: {new Date(item.createdAt).toLocaleDateString('uk-UA')}
+                                Zveřejněno: {formatDate(item.createdAt)}
                             </p>
                             {user?.role === "admin" && (
                                 <div className='admin-actions'>

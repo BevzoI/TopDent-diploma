@@ -31,3 +31,6 @@
     cursor: pointer;
     background-color: #fff;
 }
+.header__user .rs-dropdown-item-content .rs-badge-content {
+    --rs-badge-offset-x: -9px;
+}

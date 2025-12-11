@@ -3,38 +3,38 @@ import { useParams } from "react-router-dom";
 
 import { List, Avatar, Stack, Text, Tag } from "rsuite";
 import { PageHeader } from "../../components/ui";
+import { siteUrls } from "../../utils/siteUrls";
 
 import { apiRequest, apiUrl } from "../../utils/apiData";
-import { siteUrls } from "../../utils/siteUrls";
-import { formatDateTime } from "../../utils/utils";
+import { formatDateTime } from '../../utils/utils';
 
-export default function CourseChoice() {
+export default function EventAnswers() {
   const { id } = useParams();
 
-  const [courseData, setCourseData] = useState(null);
+  const [eventData, setEventData] = useState(null);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch course + users
+  // Fetch event + users
   useEffect(() => {
     const loadData = async () => {
-      // Load course
-      const courseRes = await apiRequest(`${apiUrl.courses}/${id}`, "GET");
+      // 1. Event
+      const eventRes = await apiRequest(`${apiUrl.events}/${id}`, "GET");
 
-      // Load users
+      // 2. Users
       const usersRes = await apiRequest(apiUrl.users, "GET");
 
-      if (courseRes?.status === "success" && usersRes?.users) {
-        const course = courseRes.data;
+      if (eventRes?.status === "success" && usersRes?.users) {
+        const ev = eventRes.data;
         const allUsers = usersRes.users;
 
-        // If course.users = [] → visible for all
+        // If event.users = [] → visible for all
         const visibleUsers =
-          course.users?.length > 0
-            ? allUsers.filter((u) => course.users.includes(u._id))
+          ev.users?.length > 0
+            ? allUsers.filter((u) => ev.users.includes(u._id))
             : allUsers;
 
-        setCourseData(course);
+        setEventData(ev);
         setUsers(visibleUsers);
       }
 
@@ -44,41 +44,35 @@ export default function CourseChoice() {
     loadData();
   }, [id]);
 
-  // Get answer for each user
   const getAnswer = (userId) => {
-    if (!courseData) return null;
-    return courseData.answers.find((a) => a.userId === userId);
+    if (!eventData) return null;
+    return eventData.answers.find((a) => a.userId === userId);
   };
 
   return (
     <>
       <PageHeader
-        title="Odpovědi na kurz"
-        backTo={siteUrls.courses}
+        title="Odpovědi na událost"
+        backTo={siteUrls.events}
         headingLevel={2}
       />
 
       {loading && <p>Načítám...</p>}
 
-      {!loading && courseData && (
+      {!loading && eventData && (
         <>
           <h4 style={{ marginTop: 10, marginBottom: 8 }}>
-            Kurz: <strong>{courseData.title}</strong>
+            Událost: <strong>{eventData.title}</strong>
           </h4>
 
-          {courseData.description && (
-            <p style={{ marginBottom: 10 }}>{courseData.description}</p>
-          )}
-
-          {courseData.location && (
-            <p style={{ marginBottom: 6 }}>📍 {courseData.location}</p>
+          {eventData.address && (
+            <p style={{ marginBottom: 6 }}>📍 {eventData.address}</p>
           )}
 
           <p style={{ marginBottom: 20 }}>
-            🕒 {formatDateTime(courseData.dateTime)}
+            🕒 {formatDateTime(eventData.dateTime)}
           </p>
 
-          {/* USER LIST */}
           <List bordered hover>
             {users.map((u) => {
               const answer = getAnswer(u._id);
@@ -112,13 +106,13 @@ export default function CourseChoice() {
 
                     {answer?.value === "yes" && (
                       <Tag color="green" size="sm">
-                        Zúčastním se
+                        Přijdu
                       </Tag>
                     )}
 
                     {answer?.value === "no" && (
                       <Tag color="red" size="sm">
-                        Nezúčastním se
+                        Nepřijdu
                       </Tag>
                     )}
                   </Stack>

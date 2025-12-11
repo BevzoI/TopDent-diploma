@@ -6,90 +6,87 @@ import { siteUrls } from "../../utils/siteUrls";
 import { apiRequest, apiUrl } from "../../utils/apiData";
 import { ButtonAdd, PageHeader } from "../../components/ui";
 import { useAuthContext } from "../../context/AuthContext";
-
 import { formatDateTime } from '../../utils/utils';
 import AnswerButtons from '../../components/AnswerButtons';
 
-export default function CoursesList() {
+export default function EventList() {
   const { user } = useAuthContext();
-  const [courses, setCourses] = useState([]);
+  const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Load courses
+  // Load all events
   useEffect(() => {
-    const loadCourses = async () => {
-      const res = await apiRequest(apiUrl.courses, "GET");
+    const loadEvents = async () => {
+      const res = await apiRequest(apiUrl.events, "GET");
 
       if (res?.status === "success") {
-        setCourses(res.data);
+        setEvents(res.data);
       }
 
       setLoading(false);
     };
 
-    loadCourses();
+    loadEvents();
   }, []);
 
-  // Delete course
-  const deleteCourse = async (id) => {
-    const confirmDelete = window.confirm("Opravdu chcete smazat tento kurz?");
+  // Delete event
+  const deleteEvent = async (id) => {
+    const confirmDelete = window.confirm("Opravdu chcete smazat tuto událost?");
     if (!confirmDelete) return;
 
-    const res = await apiRequest(`${apiUrl.courses}/${id}`, "DELETE");
+    const res = await apiRequest(`${apiUrl.events}/${id}`, "DELETE");
 
     if (res?.status === "success") {
-      setCourses((prev) => prev.filter((c) => c._id !== id));
+      setEvents((prev) => prev.filter((e) => e._id !== id));
     } else {
-      alert("Nepodařilo se smazat kurz.");
+      alert("Nepodařilo se smazat událost.");
     }
   };
 
   return (
     <>
-      <PageHeader title="Kurzy" backTo={siteUrls.home} headingLevel={2} />
+      <PageHeader title="Události" backTo={siteUrls.home} headingLevel={2} />
 
       {loading && <p>Načítám...</p>}
 
-      {!loading && courses.length === 0 && (
-        <p>Žádné kurzy nejsou k dispozici.</p>
+      {!loading && events.length === 0 && (
+        <p>Žádné události nejsou k dispozici.</p>
       )}
 
       <div className="card-list">
         {!loading &&
-          courses.map((course) => (
-            <Card key={course._id} shaded className="mb-20">
+          events.map((ev) => (
+            <Card key={ev._id} shaded className="mb-20">
               <Card.Header>
-                <Heading level={5} size="md">
-                  <Link to={siteUrls.viewCourseChoice(course._id)}>
-                    {course.title}
-                  </Link>
+                <Heading level={5} size="md" bold>
+                  <Link to={siteUrls.eventAnswers(ev._id)}>{ev.title}</Link>
                 </Heading>
               </Card.Header>
 
               <Card.Body>
-                {course.description && (
+                {ev.description && (
                   <Text style={{ display: "block", marginBottom: 8 }}>
-                    {course.description}
+                    {ev.description}
                   </Text>
                 )}
 
-                {course.location && (
-                  <Text muted style={{ display: "block", marginBottom: 6 }}>
-                    📍 {course.location}
+                {ev.address && (
+                  <Text muted style={{ display: "block", marginBottom: 8 }}>
+                    📍 {ev.address}
                   </Text>
                 )}
 
-                <Text muted>🕒 {formatDateTime(course.dateTime)}</Text>
+                <Text muted>🕒 {formatDateTime(ev.dateTime)}</Text>
               </Card.Body>
 
               <Card.Footer>
-              <AnswerButtons
-                type="courses"
-                itemId={course._id}
-                initialAnswers={course.answers}
-                yesLabel="Zúčastním se"
-                noLabel="Nezúčastním se"
-                />
+			  <AnswerButtons
+				type="events"
+				itemId={ev._id}
+				initialAnswers={ev.answers}
+				yesLabel="Přijdu"
+				noLabel="Nepřijdu"
+				/>
 
               </Card.Footer>
 
@@ -97,7 +94,7 @@ export default function CoursesList() {
               {user?.role === "admin" && (
                 <div className="admin-actions" style={{ padding: "0 18px 24px" }}>
                   <Link
-                    to={siteUrls.editCourse(course._id)}
+                    to={siteUrls.editEvent(ev._id)}
                     className="btn btn-sm btn-green"
                   >
                     Upravit
@@ -105,19 +102,19 @@ export default function CoursesList() {
 
                   <button
                     className="btn btn-sm btn-red"
-                    onClick={() => deleteCourse(course._id)}
+                    onClick={() => deleteEvent(ev._id)}
                   >
                     Smazat
                   </button>
 
                   <p
                     className={`admin-status ${
-                      course.publish === "show"
+                      ev.publish === "show"
                         ? "admin-status-published"
                         : "admin-status-hidden"
                     }`}
                   >
-                    {course.publish === "show" ? "Zobrazeno" : "Skryto"}
+                    {ev.publish === "show" ? "Zobrazeno" : "Skryto"}
                   </p>
                 </div>
               )}
@@ -125,7 +122,9 @@ export default function CoursesList() {
           ))}
       </div>
 
-      {user?.role === "admin" && <ButtonAdd link={siteUrls.addCourse} />}
+      {user?.role === "admin" && (
+        <ButtonAdd link={siteUrls.addEvent} />
+      )}
     </>
   );
 }

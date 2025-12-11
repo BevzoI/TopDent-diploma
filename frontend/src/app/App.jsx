@@ -7,8 +7,9 @@ import AuthContext from "./context/AuthContext";
 
 const Home = lazy(() => import("./pages/Home"));
 const ErrorPage = lazy(() => import("./pages/ErrorPage"));
-const Omluvenky = lazy(() => import("./pages/Omluvenky"));
 const Vyplatnipaska = lazy(() => import("./pages/VyplatniPaska"));
+const Weekend = lazy(() => import("./pages/weekend/Weekend"));
+const WeekendForm = lazy(() => import("./pages/weekend/WeekendForm"));
 const News = lazy(() => import("./pages/news/News"));
 const NewsForm = lazy(() => import("./pages/news/NewsForm"));
 const Contacts = lazy(() => import("./pages/contacts/Contacts"));
@@ -19,6 +20,12 @@ const ChatForm = lazy(() => import("./pages/chat/ChatForm"));
 const CoursesList = lazy(() => import("./pages/courses/CoursesList"));
 const CourseForm = lazy(() => import("./pages/courses/CourseForm"));
 const CourseChoice = lazy(() => import("./pages/courses/CourseChoice"));
+const PollList = lazy(() => import("./pages/poll/PollList"));
+const PollForm = lazy(() => import("./pages/poll/PollForm"));
+const PollAnswers = lazy(() => import("./pages/poll/PollAnswers"));
+const EventList = lazy(() => import("./pages/events/EventList"));
+const EventForm = lazy(() => import("./pages/events/EventForm"));
+const EventAnswers = lazy(() => import("./pages/events/EventAnswers"));
 
 
 function AppRoutes() {
@@ -26,8 +33,12 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<Home />} />
-        <Route path="omluvenky" element={<Omluvenky />} />
         <Route path="vyplatni-paska" element={<Vyplatnipaska />} />
+        <Route path="weekend">
+          <Route index element={<Weekend />} />
+          <Route path="add" element={<WeekendForm />} />
+          <Route path="edit/:id" element={<WeekendForm />} />
+        </Route>
         <Route path="news">
           <Route index element={<News />} />
           <Route path="add" element={<NewsForm />} />
@@ -50,6 +61,20 @@ function AppRoutes() {
           <Route path="add" element={<CourseForm />} />
           <Route path="edit/:id" element={<CourseForm />} />
         </Route>
+        <Route path="poll">
+          <Route index element={<PollList />} />
+          <Route path="answers/:id" element={<PollAnswers />} />
+          <Route path="add" element={<PollForm />} />
+          <Route path="edit/:id" element={<PollForm />} />
+        </Route>
+        <Route path="events">
+          <Route index element={<EventList />} />
+          <Route path="add" element={<EventForm />} />
+          <Route path="edit/:id" element={<EventForm />} />
+          <Route path="answers/:id" element={<EventAnswers />} />
+        </Route>
+
+
         <Route path="*" element={<ErrorPage />} />
       </Route>
     </Routes>

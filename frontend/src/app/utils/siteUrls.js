@@ -1,6 +1,10 @@
 export const siteUrls = {
     home: "/",
 
+    weekend: "/weekend",
+    addWeekend: "/weekend/add",
+    editWeekend: (id) => `/weekend/edit/${id}`,
+
     news: "/news",
     addNews: "/news/add",
     editNews: (id) => `/news/edit/${id}`,
@@ -18,6 +22,17 @@ export const siteUrls = {
     addCourse: "/courses/add",
     editCourse: (id) => `/courses/edit/${id}`,
     viewCourseChoice: (id) => `/courses/choice/${id}`,
+
+    poll: "/poll",
+    addPoll: "/poll/add",
+    editPoll: (id) => `/poll/edit/${id}`,
+    pollAnswers: (id) => `/poll/answers/${id}`,
+
+    events: "/events",
+    addEvent: "/events/add",
+    editEvent: (id) => `/events/edit/${id}`,
+    eventAnswers: (id) => `/events/answers/${id}`,
+    
 };
 
 export const filePath = {

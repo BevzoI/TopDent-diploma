@@ -2,6 +2,7 @@ const BASE_URL = process.env.REACT_APP_API_URL;
 
 // Універсальний запит для JSON
 export async function apiRequest(url = "", method = "GET", data = null) {
+
     try {
         const options = { method, headers: {} };
 
@@ -9,9 +10,12 @@ export async function apiRequest(url = "", method = "GET", data = null) {
         const token = localStorage.getItem("token");
         if (token) {
             try {
-                const payload = JSON.parse(atob(token)); // { id, email, role }
+                const payload = JSON.parse(atob(token));
                 if (payload?.role) {
                     options.headers["X-User-Role"] = payload.role;
+                }
+                if (payload?.id) {
+                    options.headers["X-User-Id"] = payload.id;
                 }
             } catch (e) {
                 console.warn("Invalid token in localStorage", e);
@@ -54,5 +58,11 @@ export const apiUrl = {
   news: `${BASE_URL}/news`,
   auth: `${BASE_URL}/auth`,
   users: `${BASE_URL}/users`,
+  weekend: `${BASE_URL}/weekend`,
+  poll: `${BASE_URL}/poll`,
+  events: `${BASE_URL}/events`,
+  courses: `${BASE_URL}/courses`,
+  chat: `${BASE_URL}/chat`,
+  notifications: `${BASE_URL}/notifications/`,
 };
 

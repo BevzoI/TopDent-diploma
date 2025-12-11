@@ -16,6 +16,8 @@ import * as yup from "yup";
 import Field from "../../components/ui/Field";
 import { publishOptions } from "../../data/Options";
 import { apiRequest, apiUrl } from "../../utils/apiData";
+import { PageHeader } from '../../components/ui';
+import { siteUrls } from '../../utils/siteUrls';
 
 // схема валідації
 const schema = yup.object({
@@ -97,16 +99,13 @@ export default function NewsForm() {
   };
 
   return (
-    <form
-      style={{ padding: 20, maxWidth: 700, margin: "0 auto" }}
-      onSubmit={handleSubmit(onSubmit)}
-      noValidate
-    >
-      <Panel bordered shaded>
-        <h3 style={{ marginBottom: 20 }}>
-          {isEdit ? "Upravit zprávu" : "Přidat novou zprávu"}
-        </h3>
-
+    <form onSubmit={handleSubmit(onSubmit)} noValidate>
+      <PageHeader
+          title={isEdit ? "Upravit zprávu" : "Přidat novou zprávu"}
+          backTo={siteUrls.news}
+          className='mb-20'
+      />
+        
         <div>
           {/* Název */}
           <Field label="Název">
@@ -158,7 +157,7 @@ export default function NewsForm() {
                   <SelectPicker
                     data={publishOptions}
                     searchable={false}
-                    style={{ width: 200 }}
+                    style={{ width: '100%' }}
                     cleanable={false}
                     placeholder="Vyberte stav"
                     value={field.value}
@@ -183,7 +182,6 @@ export default function NewsForm() {
             </Button>
           </ButtonToolbar>
         </div>
-      </Panel>
     </form>
   );
 }

@@ -1,36 +1,81 @@
 import { Link } from 'react-router-dom';
-import Img from '../ui/Img';
+import { Badge, Avatar, Dropdown } from 'rsuite';
+
 import { useAuthContext } from '../../context/AuthContext';
-import { Badge, Avatar, Tooltip, Whisper } from 'rsuite';
-import { filePath, siteUrls } from '../../utils/siteUrls';
+import { siteUrls } from '../../utils/siteUrls';
 import { getUserAvatar } from '../../utils/utils';
+import { pagesList } from '../../data/Pages';
+import { Img } from '../ui';
 
 export default function Header({ headerData }) {
   const { user } = useAuthContext();
-
   const email = user?.email || "Neznámý uživatel";
 
+  // 🔥 читаємо нотифікації прямо з контексту
+  const notifications = user?.notifications || {};
+
+  //
+  // Аватар-тригер меню
+  //
+  const renderToggle = (props, ref) => (
+    <Badge placement="topStart">
+      <Avatar
+        circle
+        {...props}
+        ref={ref}
+        src={getUserAvatar(user) + "?v=" + Date.now()}
+        style={{ cursor: "pointer" }}
+      />
+    </Badge>
+  );
+
   return (
-    <div className='header'>
+    <div className="header">
       <div className="container">
 
         <Link to="/" className="header__logo-link">
-          <Img src="/img/logo.png" alt="Logo" className='header__logo' />
+          <Img src="/img/logo.png" alt="Logo" className="header__logo" />
         </Link>
 
         <h3 className="header__label">{headerData.title}</h3>
 
-        <Link to={siteUrls.userEdit} className="header__user">
-          <Whisper
-            placement="bottomEnd"
-            trigger="hover"
-            speaker={<Tooltip>{email}</Tooltip>}
-          >
-            <Badge content={6} placement="topStart">
-              <Avatar circle src={getUserAvatar(user) + "?v=" + Date.now()} />
-            </Badge>
-          </Whisper>
-        </Link>
+        <div className="header__user">
+          <Dropdown renderToggle={renderToggle} placement="bottomEnd">
+
+            {/* Верхня панель */}
+            <Dropdown.Item panel style={{ padding: 10, width: 190 }}>
+              <p style={{ margin: 0, opacity: 0.7 }}>Přihlášen jako</p>
+              <strong>{email}</strong>
+            </Dropdown.Item>
+
+            <Dropdown.Separator />
+
+            {/* Профіль */}
+            <Dropdown.Item as={Link} to={siteUrls.editContacts(user?.id)}>
+              <span>Profil</span>
+            </Dropdown.Item>
+
+            <Dropdown.Separator />
+
+            {/* Інші розділи */}
+            {pagesList.map((btn, i) => {
+              const hasBadge = notifications?.[btn.key] === true;
+
+              return (
+                <Dropdown.Item as={Link} to={btn.to} key={i}>
+                  {hasBadge ? (
+                    <Badge placement="topStart">
+                      <span>{btn.text}</span>
+                    </Badge>
+                  ) : (
+                    <span>{btn.text}</span>
+                  )}
+                </Dropdown.Item>
+              );
+            })}
+
+          </Dropdown>
+        </div>
 
       </div>
     </div>

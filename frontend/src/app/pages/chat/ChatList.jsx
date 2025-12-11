@@ -1,74 +1,131 @@
-import { Link } from 'react-router-dom';
-import { ButtonAdd } from '../../components/ui';
-import { IconButton, Panel, FlexboxGrid } from "rsuite";
-import { siteUrls } from '../../utils/siteUrls';
-import { useAuthContext } from '../../context/AuthContext';
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { ButtonAdd, PageHeader } from "../../components/ui";
+import { Panel, FlexboxGrid, Message } from "rsuite";
+
+import { siteUrls } from "../../utils/siteUrls";
+import { apiRequest, apiUrl } from "../../utils/apiData";
+import { useAuthContext } from "../../context/AuthContext";
 
 export default function ChatList() {
-    const { user } = useAuthContext();
+  const { user } = useAuthContext();
 
-    const chats = [
-        { id: 1, title: "Питання по React", createdBy: "Vadim", publish: "show" },
-        { id: 3, title: "Обговорення API", createdBy: "Admin", publish: "show" },
-    ];
+  const [chats, setChats] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState("");
 
-    const handleOpenChat = (id) => {
-        console.log("open chat", id);
+  // 🟦 Load all chats
+  useEffect(() => {
+    const loadChats = async () => {
+      const res = await apiRequest(apiUrl.chat, "GET");
+
+      if (res?.status === "success") {
+        setChats(res.data);
+      } else {
+        setApiError("Nepodařilo se načíst chaty.");
+      }
+
+      setLoading(false);
     };
 
-    return (
-        <>
-            <h2 className='page-title'>Seznam chatů</h2>
+    loadChats();
+  }, []);
 
-            <FlexboxGrid justify="start" align="top" gutter={20}>
-                {chats.map((chat) => (
-                    <FlexboxGrid.Item
-                        key={chat.id}
-                        colspan={24}
-                        sm={12}
-                        md={8}
-                        lg={6}
-                    >
-                        <Panel bordered shaded className="chat-card">
-                            <Link
-                                to={siteUrls.viewChat(chat.id)}
-                                onClick={() => handleOpenChat(chat.id)}
-                                className="chat-title"
-                            >
-                                {chat.title}
-                            </Link>
+  // 🟦 Delete chat
+  const deleteChat = async (id) => {
+    if (!window.confirm("Opravdu chcete smazat tento chat?")) return;
 
-                            <div className="chat__meta">
-                                <div className="chat__meta-item">
-                                    <div className="chat__meta-item-label">Datum:</div>
-                                    <div className="chat__meta-item-value">12.12.2025</div>
-                                </div>
-                                <div className="chat__meta-item">
-                                    <div className="chat__meta-item-label">Vytvořil:</div>
-                                    <div className="chat__meta-item-value">{chat.createdBy}</div>
-                                </div>
-                            </div>
+    const res = await apiRequest(`${apiUrl.chat}/${id}`, "DELETE");
 
-                            {user?.role === "admin" && (
-                                <div className='admin-actions'>
-                                    <Link to={siteUrls.editChat(chat.id)} className='btn btn-sm btn-green'>
-                                        Upravit
-                                    </Link>
+    if (res?.status === "success") {
+      setChats((prev) => prev.filter((c) => c._id !== id));
+    } else {
+      setApiError("Nepodařilo se smazat chat.");
+    }
+  };
 
-                                    <button className='btn btn-sm btn-red'>
-                                        Smazat
-                                    </button>
-                                    <p className={`admin-status ${chat.publish === "show" ? "admin-status-published" : "admin-status-hidden"}`}>
-                                        {chat.publish === "show" ? "Zobrazeno" : "Skryto"}
-                                    </p>
-                                </div>
-                            )}
-                        </Panel>
-                    </FlexboxGrid.Item>
-                ))}
-            </FlexboxGrid>
+  return (
+    <>
+      <PageHeader title="Seznam chatů" backTo={siteUrls.home} headingLevel={2} />
 
-            <ButtonAdd link={siteUrls.addChat} />
-        </>
-    );
+      {apiError && (
+        <Message type="error" showIcon style={{ marginBottom: 15 }}>
+          {apiError}
+        </Message>
+      )}
+
+      {loading && <p>Načítám…</p>}
+
+      {!loading && chats.length === 0 && <p>Žádné chaty nejsou k dispozici.</p>}
+
+      <FlexboxGrid justify="start" align="top" gutter={20}>
+        {chats.map((chat) => (
+          <FlexboxGrid.Item
+            key={chat._id}
+            colspan={24}
+            sm={12}
+            md={8}
+            lg={6}
+          >
+            <Panel bordered shaded className="chat-card">
+              {/* Chat title */}
+              <Link to={siteUrls.viewChat(chat._id)} className="chat-title">
+                {chat.title}
+              </Link>
+
+              {/* INFO */}
+              <div className="chat__meta">
+                <div className="chat__meta-item">
+                  <div className="chat__meta-item-label">Vytvořeno:</div>
+                  <div className="chat__meta-item-value">
+                    {new Date(chat.createdAt).toLocaleDateString("cs-CZ")}
+                  </div>
+                </div>
+
+                <div className="chat__meta-item">
+                  <div className="chat__meta-item-label">Členové:</div>
+                  <div className="chat__meta-item-value">
+                    {chat.members?.length === 0
+                      ? "Všichni"
+                      : `${chat.members.length} uživatelů`}
+                  </div>
+                </div>
+              </div>
+
+              {/* ADMIN ACTIONS */}
+              {user?.role === "admin" && (
+                <div className="admin-actions">
+                  <Link
+                    to={siteUrls.editChat(chat._id)}
+                    className="btn btn-sm btn-green"
+                  >
+                    Upravit
+                  </Link>
+
+                  <button
+                    className="btn btn-sm btn-red"
+                    onClick={() => deleteChat(chat._id)}
+                  >
+                    Smazat
+                  </button>
+
+                  <p
+                    className={`admin-status ${
+                      chat.publish === "show"
+                        ? "admin-status-published"
+                        : "admin-status-hidden"
+                    }`}
+                  >
+                    {chat.publish === "show" ? "Zobrazeno" : "Skryto"}
+                  </p>
+                </div>
+              )}
+            </Panel>
+          </FlexboxGrid.Item>
+        ))}
+      </FlexboxGrid>
+
+      <ButtonAdd link={siteUrls.addChat} />
+    </>
+  );
 }

@@ -1,35 +1,60 @@
-// models/User.js
 import mongoose from "mongoose";
 
-const userSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema(
+  {
     email: {
-        type: String,
-        required: true,
-        unique: true,
-        trim: true,
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
     },
+
     password: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
     },
+
     role: {
-        type: String,
-        enum: ["admin", "user"],
-        default: "user",
+      type: String,
+      enum: ["admin", "user"],
+      default: "user",
     },
+
     avatar: {
-        type: String,
-        default: null,
+      type: String,
+      default: null,
     },
+
     phone: {
-        type: String,
-        default: "",
-    }
+      type: String,
+      default: "",
+    },
 
-}, {
-    timestamps: true
-});
+    name: {
+      type: String,
+      trim: true,
+      default: "",
+    },
 
+    clinic: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    birthDate: {
+      type: Date,
+      default: null,
+    },
+
+    lastWeekendCheck: { type: Date, default: null },
+    lastNewsCheck: { type: Date, default: null },
+    lastChatCheck: { type: Date, default: null },
+  },
+  {
+    timestamps: true,
+  }
+);
 
 const User = mongoose.model("User", userSchema);
 

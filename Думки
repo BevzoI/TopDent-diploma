@@ -1,14 +1,17 @@
-
 Збираємо контейнер для docker
 docker-compose up --build -d
 
+Користувачі:
+http://localhost:3000/?user=admin@gmail.com&pass=admin
+http://localhost:3000/?user=user@gmail.com&pass=user
 
 Vercel
-API:      https://top-dent-diploma-z16y.vercel.app/
-Frontend: https://vercel.com/bevzois-projects/top-dent-diploma
+Frontend: https://top-dent-diploma-z16y.vercel.app/
+API:      https://top-dent-diploma.vercel.app/
 
-
-
+Локальна розробка
+Frontend: http://localhost:3000/
+API:      http://localhost:5000/
 
 
 
@@ -17,62 +20,5 @@ oPLw8mhsLuINVlq1srYv2fmNvnc
 887673383347629
 CLOUDINARY_URL=cloudinary://<your_api_key>:<your_api_secret>@dv97pohxn
 
-Вибачення
-Дошка оголошень
-Новини
-Анкети
-Відпустка
-Курси
-Контакти
-Фотогалерея
-Події
-Додати
-??? Виплати
 
 
-
-CRUD ( Create, Read (One, All), Update, Delete )
-
-
-
-
-
-frontend
- ┣ app
- ┃ ┣ components
- ┃ ┃ ┣ ui
- ┃ ┃ ┃ ┗ Button.jsx
- ┃ ┃ ┣ Header.jsx
- ┃ ┃ ┗ Layout.jsx
- ┃ ┣ pages
- ┃ ┃ ┣ Add.jsx
- ┃ ┃ ┣ Board.jsx
- ┃ ┃ ┣ Contacts.jsx
- ┃ ┃ ┣ Courses.jsx
- ┃ ┃ ┣ Events.jsx
- ┃ ┃ ┣ Gallery.jsx
- ┃ ┃ ┣ Home.jsx
- ┃ ┃ ┣ Messages.jsx
- ┃ ┃ ┣ Omluvenka.jsx
- ┃ ┃ ┣ Payslips.jsx
- ┃ ┃ ┣ Surveys.jsx
- ┃ ┃ ┗ Vacation.jsx
- ┃ ┣ utils
- ┃ ┃ ┗ utils.js
- ┃ ┗ App.jsx
- ┣ assets
- ┃ ┣ adaptive-icon.png
- ┃ ┣ favicon.png
- ┃ ┣ icon.png
- ┃ ┗ splash-icon.png
- ┣ css
- ┃ ┣ 0--main.css
- ┃ ┣ block--header.css
- ┃ ┗ style.css
- ┣ .gitignore
- ┣ app.json
- ┣ babel.config.js
- ┣ index.js
- ┣ package-lock.json
- ┣ package.json
- ┗ tailwind.config.js

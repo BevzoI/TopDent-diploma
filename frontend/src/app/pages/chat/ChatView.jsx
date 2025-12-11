@@ -1,172 +1,148 @@
-import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { Heading, HeadingGroup,List, HStack, Text, Avatar, Button, Stack, Input, InputGroup } from "rsuite";
-import { siteUrls } from "../../utils/siteUrls";
-import SendIcon from "@rsuite/icons/Send";
-import ArrowLeftLineIcon from "@rsuite/icons/ArrowLeftLine";
+import { useEffect, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
+import { Input, Button, List, Avatar } from "rsuite";
+
+import { apiRequest, apiUrl } from "../../utils/apiData";
+import { useAuthContext } from "../../context/AuthContext";
 
 export default function ChatView() {
-    const { chatId } = useParams();
+  const { id } = useParams();
+  const { user } = useAuthContext();
 
-    const [message, setMessage] = useState("");
+  const [chat, setChat] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [text, setText] = useState("");
 
-    // Тимчасові дані
-    const messages = [
-        {
-            id: 1,
-            sender: "Alice",
-            content: "Hey, are we still meeting tomorrow?",
-            time: "2024-12-05 10:15",
-            avatar: "https://i.pravatar.cc/150?u=1",
-        },
-        {
-            id: 2,
-            sender: "Bob",
-            content: "Yes, let’s meet at 3 PM.",
-            time: "2024-12-05 10:18",
-            avatar: "https://i.pravatar.cc/150?u=2",
-        },
-        {
-            id: 3,
-            sender: "Charlie",
-            content: "Can you send me the report?",
-            time: "2024-12-05 11:00",
-            avatar: "https://i.pravatar.cc/150?u=3",
-        },
-        {
-            id: 4,
-            sender: "David",
-            content: "I will, no worries.",
-            time: "2024-12-05 11:05",
-            avatar: "https://i.pravatar.cc/150?u=4",
-        },
-        {
-            id: 1,
-            sender: "Alice",
-            content: "Hey, are we still meeting tomorrow?",
-            time: "2024-12-05 10:15",
-            avatar: "https://i.pravatar.cc/150?u=1",
-        },
-        {
-            id: 2,
-            sender: "Bob",
-            content: "Yes, let’s meet at 3 PM.",
-            time: "2024-12-05 10:18",
-            avatar: "https://i.pravatar.cc/150?u=2",
-        },
-        {
-            id: 3,
-            sender: "Charlie",
-            content: "Can you send me the report?",
-            time: "2024-12-05 11:00",
-            avatar: "https://i.pravatar.cc/150?u=3",
-        },
-        {
-            id: 4,
-            sender: "David",
-            content: "I will, no worries.",
-            time: "2024-12-05 11:05",
-            avatar: "https://i.pravatar.cc/150?u=4",
-        },
-        {
-            id: 1,
-            sender: "Alice",
-            content: "Hey, are we still meeting tomorrow?",
-            time: "2024-12-05 10:15",
-            avatar: "https://i.pravatar.cc/150?u=1",
-        },
-        {
-            id: 2,
-            sender: "Bob",
-            content: "Yes, let’s meet at 3 PM.",
-            time: "2024-12-05 10:18",
-            avatar: "https://i.pravatar.cc/150?u=2",
-        },
-        {
-            id: 3,
-            sender: "Charlie",
-            content: "Can you send me the report?",
-            time: "2024-12-05 11:00",
-            avatar: "https://i.pravatar.cc/150?u=3",
-        },
-        {
-            id: 4,
-            sender: "David",
-            content: "I will, no worries.",
-            time: "2024-12-05 11:05",
-            avatar: "https://i.pravatar.cc/150?u=4",
-        },
-        {
-            id: 1,
-            sender: "Alice",
-            content: "Hey, are we still meeting tomorrow?",
-            time: "2024-12-05 10:15",
-            avatar: "https://i.pravatar.cc/150?u=1",
-        },
-        {
-            id: 2,
-            sender: "Bob",
-            content: "Yes, let’s meet at 3 PM.",
-            time: "2024-12-05 10:18",
-            avatar: "https://i.pravatar.cc/150?u=2",
-        },
-        {
-            id: 3,
-            sender: "Charlie",
-            content: "Can you send me the report?",
-            time: "2024-12-05 11:00",
-            avatar: "https://i.pravatar.cc/150?u=3",
-        },
-        {
-            id: 4,
-            sender: "David",
-            content: "I will, no worries.",
-            time: "2024-12-05 11:05",
-            avatar: "https://i.pravatar.cc/150?u=4",
-        },
-    ];
+  const [lastTimestamp, setLastTimestamp] = useState(null);
+  const scrollRef = useRef();
 
-    const sendMessage = () => {
-        console.log("send:", message);
-        setMessage("");
+  // 🔵 Завантаження всього чату при вході
+  useEffect(() => {
+    const loadChat = async () => {
+      const res = await apiRequest(`${apiUrl.chat}/${id}`, "GET");
+
+      if (res?.status === "success") {
+        setChat(res.data);
+        setMessages(res.data.messages);
+
+        if (res.data.messages.length > 0) {
+          setLastTimestamp(
+            res.data.messages[res.data.messages.length - 1].createdAt
+          );
+        }
+
+        scrollToBottom();
+      }
     };
 
-    return (
-        <div className="chat-container">
-            <HeadingGroup className="chat-header">
-                <Button as={Link} to={siteUrls.chat} className="header-prev" startIcon={<ArrowLeftLineIcon />} appearance="subtle">Vrátit se zpět</Button>
-                <Heading level={5}>ACME Corporation</Heading>
-                {/* <Text muted size="sm">Vytvořil: Admin, 12.12.2025</Text> */}
-            </HeadingGroup>
+    loadChat();
+  }, [id]);
 
-            <List>
-                {messages.map((message) => (
-                    <List.Item key={message.id} className="chat-item">
-                        <HStack spacing={15} alignItems="center">
-                            <Avatar src={message.avatar} alt={message.sender} circle />
-                            <HStack.Item flex={1}>
-                                <HStack className="chat-item__header">
-                                    <Text className="chat-item__user">{message.sender}</Text>
-                                    <Text className="chat-item__date" size="sm">
-                                        {message.time}
-                                    </Text>
-                                </HStack>
-                                <Text className="chat-item__message">{message.content}</Text>
-                            </HStack.Item>
-                        </HStack>
-                    </List.Item>
-                ))}
-            </List>
+  // 🔵 Автооновлення кожні 2 секунди
+  useEffect(() => {
+    const interval = setInterval(loadNewMessages, 2500);
+    return () => clearInterval(interval);
+  });
 
-            {/* Форма відправлення */}
-            <div className="chat-form-send">
-                <InputGroup inside size="lg">
-                    <Input placeholder="Napište zprávu..." value={message} onChange={setMessage} />
-                    <InputGroup.Button onClick={sendMessage}>
-                        <SendIcon />
-                    </InputGroup.Button>
-                </InputGroup>
-            </div>
-        </div>
+  // 🟢 Завантажуємо тільки нові повідомлення
+  const loadNewMessages = async () => {
+    if (!lastTimestamp) return;
+
+    const res = await apiRequest(
+      `${apiUrl.chat}/${id}/messages?since=${lastTimestamp}`
     );
+
+    if (res?.status === "success" && res.data.length > 0) {
+      setMessages((prev) => [...prev, ...res.data]);
+
+      setLastTimestamp(res.data[res.data.length - 1].createdAt);
+
+      scrollToBottom();
+    }
+  };
+
+  // 🟢 Відправка повідомлення
+  const sendMessage = async () => {
+    if (!text.trim()) return;
+
+    const payload = {
+      sender: user._id,
+      content: text.trim(),
+    };
+
+    const res = await apiRequest(`${apiUrl.chat}/${id}/message`, "POST", payload);
+
+    if (res?.status === "success") {
+      // додаємо одразу, не чекаємо інтервал
+      setMessages((prev) => [...prev, res.data.messages.at(-1)]);
+
+      setLastTimestamp(res.data.messages.at(-1).createdAt);
+
+      setText("");
+      scrollToBottom();
+    }
+  };
+
+  const scrollToBottom = () => {
+    setTimeout(() => {
+      scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 50);
+  };
+
+  if (!chat) return <p>Načítám...</p>;
+
+  return (
+    <div className="chat-view">
+      <h3>{chat.title}</h3>
+
+      <List hover>
+        {messages.map((msg) => {
+          const isMine = msg.sender === user._id || msg.sender?._id === user._id;
+
+          return (
+            <List.Item
+              key={msg._id}
+              style={{
+                textAlign: isMine ? "right" : "left",
+                padding: "10px 5px",
+              }}
+            >
+              <div
+                style={{
+                  display: "inline-block",
+                  background: isMine ? "#d0f0d0" : "#e8e8e8",
+                  borderRadius: 8,
+                  padding: "8px 12px",
+                  maxWidth: "70%",
+                }}
+              >
+                {!isMine && (
+                  <div style={{ fontSize: 12, fontWeight: 600 }}>
+                    {msg.sender?.name || msg.sender?.email}
+                  </div>
+                )}
+                <div>{msg.content}</div>
+                <div style={{ fontSize: 10, opacity: 0.6, marginTop: 4 }}>
+                  {new Date(msg.createdAt).toLocaleTimeString("cs-CZ")}
+                </div>
+              </div>
+            </List.Item>
+          );
+        })}
+
+        <div ref={scrollRef}></div>
+      </List>
+
+      <div className="chat-input" style={{ marginTop: 20, display: "flex", gap: 8 }}>
+        <Input
+          value={text}
+          onChange={(v) => setText(v)}
+          placeholder="Napište zprávu..."
+        />
+        <Button appearance="primary" onClick={sendMessage}>
+          Odeslat
+        </Button>
+      </div>
+    </div>
+  );
 }

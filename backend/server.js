@@ -7,6 +7,12 @@ import connectDB from './db.js';
 import newsRouters from './routes/newsRouters.js';
 import authRouters from './routes/authRouters.js';
 import usersRouters from './routes/usersRouters.js';
+import weekendRouters from './routes/weekendRouters.js';
+import pollRouters from './routes/pollRouters.js';
+import eventRoutes from './routes/eventRoutes.js';
+import courseRoutes from "./routes/courseRoutes.js";
+import chatRoutes from "./routes/chatRoutes.js";
+import notificationsRoutes from "./routes/notificationsRoutes.js";
 
 const app = express();
 
@@ -21,7 +27,12 @@ app.get('/', (req, res) => { res.send('Api work!') }); // Health check
 app.use('/news', newsRouters);
 app.use('/auth', authRouters);
 app.use('/users', usersRouters);
-
+app.use('/weekend', weekendRouters);
+app.use('/poll', pollRouters);
+app.use('/events', eventRoutes);
+app.use("/courses", courseRoutes);
+app.use("/chat", chatRoutes);
+app.use("/notifications", notificationsRoutes);
 
 // Vercel або локальний режим
 const isVercel = process.env.VERCEL || process.env.VERCEL_ENV;

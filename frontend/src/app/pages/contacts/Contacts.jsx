@@ -5,7 +5,8 @@ import { apiRequest, apiUrl } from "../../utils/apiData";
 import { useAuthContext } from "../../context/AuthContext";
 import Swal from "sweetalert2";
 import { filePath, siteUrls } from "../../utils/siteUrls";
-import { ButtonAdd } from '../../components/ui';
+import { ButtonAdd, PageHeader } from '../../components/ui';
+import { formatDate } from '../../utils/utils';
 
 export default function Contacts() {
   const { user } = useAuthContext();
@@ -92,7 +93,12 @@ export default function Contacts() {
 
   return (
     <>
-      <h2 className="page-title">Seznam uživatelů</h2>
+      <PageHeader
+          title="Seznam uživatelů"
+          backTo={siteUrls.home}
+          headingLevel={2}
+          className='mb-20'
+      />
 
       <Grid fluid>
         <Row gutter={20}>
@@ -102,10 +108,13 @@ export default function Contacts() {
               : filePath.avatars + (u.avatar || "AV1.webp");
 
             return (
-              <Col key={u.id} xs={24} sm={12} md={8} lg={6} className="mb-20">
+              <Col key={u.id} xs={24} sm={12} md={8} lg={6}>
                 <Panel bordered shaded className="card-user">
                   <Image src={avatar} alt={u.email} className="card-user__avatar" />
                   <div className="card-user__info">
+                    <div className="card-user__info-item">
+                      <div className="card-user__info-item-value">{u.name}</div>
+                    </div>
                     <div className="card-user__info-item">
                       <div className="card-user__info-item-label">Role:</div>
                       <div className="card-user__info-item-value">{u.role}</div>
@@ -117,6 +126,14 @@ export default function Contacts() {
                     <div className="card-user__info-item">
                       <div className="card-user__info-item-label">Telefon:</div>
                       <div className="card-user__info-item-value">{u.phone || "—"}</div>
+                    </div>
+                    <div className="card-user__info-item">
+                      <div className="card-user__info-item-label">Klinika:</div>
+                      <div className="card-user__info-item-value">{u.clinic || "—"}</div>
+                    </div>
+                    <div className="card-user__info-item">
+                      <div className="card-user__info-item-label">Datum narození:</div>
+                      <div className="card-user__info-item-value">{formatDate(u.birthDate) || "—"}</div>
                     </div>
                   </div>
 
