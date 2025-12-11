@@ -52,3 +52,6 @@ export function formatDateTime(date) {
   return `${day}.${month}.${year} ${hours}:${minutes}`;
 }
 
+export function hasAnyNotifications(notifications = {}) {
+  return Object.values(notifications).some(v => v === true);
+}

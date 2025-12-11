@@ -1,4 +1,5 @@
 import Poll from "../models/Poll.js";
+import User from "../models/User.js";
 
 // GET /poll
 export const getAllPolls = async (req, res) => {
@@ -19,6 +20,8 @@ export const getAllPolls = async (req, res) => {
         }
 
         const items = await Poll.find(query).sort({ createdAt: -1 });
+
+        await User.findByIdAndUpdate(req.headers["x-user-id"], { newPoll: false });
 
         return res.json({
             status: "success",
@@ -60,6 +63,8 @@ export const getOnePoll = async (req, res) => {
 export const createPoll = async (req, res) => {
     try {
         const item = await Poll.create(req.body);
+
+        await User.updateMany({}, { $set: { newPoll: true } });
 
         return res.status(201).json({
             status: "success",

@@ -108,7 +108,7 @@ export default function Contacts() {
               : filePath.avatars + (u.avatar || "AV1.webp");
 
             return (
-              <Col key={u.id} xs={24} sm={12} md={8} lg={6}>
+              <Col key={u.id} xs={24} sm={24} md={12} lg={8}>
                 <Panel bordered shaded className="card-user">
                   <Image src={avatar} alt={u.email} className="card-user__avatar" />
                   <div className="card-user__info">

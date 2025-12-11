@@ -2,13 +2,17 @@ import { useAuthContext } from "../../context/AuthContext";
 import { apiRequest, apiUrl } from "../../utils/apiData";
 import { formatDate } from '../../utils/utils';
 
-export default function Card({ data }) {
+export default function Card({ data, reload }) {
   const { user: currentUser } = useAuthContext();
 
   const handleStatus = async (status) => {
-    await apiRequest(`${apiUrl.weekend}/${data._id}/status`, "PATCH", { status });
-    window.location.reload(); // або emit → loadItems()
+    const res = await apiRequest(`${apiUrl.weekend}/${data._id}/status`, "PATCH", { status });
+  
+    if (res?.status === "success") {
+      reload();
+    }
   };
+  
 
   const statusClass =
     data.status === "approved"
@@ -29,7 +33,7 @@ export default function Card({ data }) {
       <div className="card__header d-flex flex-between flex-items-center gap-4 mb-8">
         <div className="card__header-left">
           <div className="card__header-user">
-            Od: {data.userId.name || "Uživatel"}
+            Od: {data.userId?.name || data.userId?.email || "Uživatel"}
           </div>
 
           <div className="card__header-date">
@@ -69,6 +73,7 @@ export default function Card({ data }) {
         {currentUser?.role === "admin" && (
           <div className="card__body-right d-flex flex-column flex-align-start gap-8">
             <button
+              type='button'
               className="btn btn-sm btn-green card__body-btn"
               onClick={() => handleStatus("approved")}
             >
@@ -76,6 +81,7 @@ export default function Card({ data }) {
             </button>
 
             <button
+              type='button'
               className="btn btn-sm btn-red card__body-btn"
               onClick={() => handleStatus("rejected")}
             >

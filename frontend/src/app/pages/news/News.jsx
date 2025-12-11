@@ -10,18 +10,16 @@ import { PageHeader } from '../../components/ui';
 import { formatDate } from '../../utils/utils';
 
 export default function News() {
-    const { user } = useAuthContext();
+    const { clearNotification, user } = useAuthContext();
     const [news, setNews] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    
-    const { setHeaderData } = useOutletContext();
 
     useEffect(() => {
-        setHeaderData({
-            title: "Nástěnka"
-        });
-    }, [setHeaderData]);
+    if (user?.notifications?.news) {
+        clearNotification("news");
+    }
+    }, [user?.notifications?.news]);  
 
     const fetchNews = async () => {
         try {
@@ -41,7 +39,7 @@ export default function News() {
 
     useEffect(() => {
         fetchNews();
-    }, []);
+    }, [user?.notifications?.news]);
 
     if (loading) {
         return <Loader size="lg" content="Nahrávání..." />;

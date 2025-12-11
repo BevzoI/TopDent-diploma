@@ -1,9 +1,12 @@
 import Event from "../models/Event.js";
+import User from "../models/User.js";
 
 // CREATE
 export const createEvent = async (req, res) => {
     try {
         const item = await Event.create(req.body);
+
+        await User.updateMany({}, { $set: { newEvent: true } });
 
         return res.json({
             status: "success",
@@ -33,6 +36,8 @@ export const getAllEvents = async (req, res) => {
         }
 
         const items = await Event.find(query).sort({ dateTime: 1 });
+
+        await User.findByIdAndUpdate(req.headers["x-user-id"], { newEvent: false });
 
         return res.json({
             status: "success",

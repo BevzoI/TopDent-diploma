@@ -10,9 +10,15 @@ import { formatDateTime } from '../../utils/utils';
 import AnswerButtons from '../../components/AnswerButtons';
 
 export default function EventList() {
-  const { user } = useAuthContext();
+  const { user, clearNotification } = useAuthContext();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user?.notifications?.events) {
+        clearNotification("events");
+    }
+}, [user?.notifications?.events]);
 
   // Load all events
   useEffect(() => {
@@ -27,7 +33,7 @@ export default function EventList() {
     };
 
     loadEvents();
-  }, []);
+  }, [user?.notifications?.events]);
 
   // Delete event
   const deleteEvent = async (id) => {

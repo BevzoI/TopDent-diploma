@@ -6,12 +6,18 @@ import { siteUrls } from "../../utils/siteUrls";
 import { apiRequest, apiUrl } from "../../utils/apiData";
 import { ButtonAdd, PageHeader } from "../../components/ui";
 import { useAuthContext } from "../../context/AuthContext";
-import AnswerButtons from '../../components/AnswerButtons';
+import AnswerButtons from "../../components/AnswerButtons";
 
 export default function PollList() {
-    const { user } = useAuthContext();
+    const { user, clearNotification } = useAuthContext();
     const [polls, setPolls] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (user?.notifications?.poll) {
+            clearNotification("poll");
+        }
+    }, [user?.notifications?.poll]);
 
     // Load all polls
     useEffect(() => {
@@ -26,7 +32,7 @@ export default function PollList() {
         };
 
         loadPolls();
-    }, []);
+    }, [user?.notifications?.poll]);
 
     async function deletePoll(id) {
         const confirmDelete = window.confirm("Opravdu chcete smazat tento dotazník?");
@@ -65,14 +71,7 @@ export default function PollList() {
                             </Card.Body>
 
                             <Card.Footer>
-                            <AnswerButtons
-                                type="poll"
-                                itemId={poll._id}
-                                initialAnswers={poll.answers}
-                                yesLabel="Ano"
-                                noLabel="Ne"
-                                />
-
+                                <AnswerButtons type="poll" itemId={poll._id} initialAnswers={poll.answers} yesLabel="Ano" noLabel="Ne" />
                             </Card.Footer>
                             {user?.role === "admin" && (
                                 <div className="admin-actions" style={{ padding: "0px 18px 24px" }}>

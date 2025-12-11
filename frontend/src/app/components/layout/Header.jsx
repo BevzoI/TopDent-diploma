@@ -1,9 +1,10 @@
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge, Avatar, Dropdown } from 'rsuite';
 
 import { useAuthContext } from '../../context/AuthContext';
 import { siteUrls } from '../../utils/siteUrls';
-import { getUserAvatar } from '../../utils/utils';
+import { getUserAvatar, hasAnyNotifications } from '../../utils/utils';
 import { pagesList } from '../../data/Pages';
 import { Img } from '../ui';
 
@@ -11,23 +12,38 @@ export default function Header({ headerData }) {
   const { user } = useAuthContext();
   const email = user?.email || "Neznámý uživatel";
 
-  // 🔥 читаємо нотифікації прямо з контексту
+  // читаємо нотифікації прямо з контексту
   const notifications = user?.notifications || {};
+
+  const avatarUrl = useMemo(() => {
+    return getUserAvatar(user) + "?v=" + (user?.updatedAt || Date.now());
+  }, [user]);
 
   //
   // Аватар-тригер меню
   //
-  const renderToggle = (props, ref) => (
-    <Badge placement="topStart">
+  const renderToggle = (props, ref) => {
+    const showBadge = hasAnyNotifications(notifications);
+
+    const avatar = (
       <Avatar
         circle
         {...props}
         ref={ref}
-        src={getUserAvatar(user) + "?v=" + Date.now()}
+        src={avatarUrl}
         style={{ cursor: "pointer" }}
       />
-    </Badge>
-  );
+    );
+  
+    return showBadge ? (
+      <Badge placement="topStart">
+        {avatar}
+      </Badge>
+    ) : (
+      avatar
+    );
+  };
+  
 
   return (
     <div className="header">

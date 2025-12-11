@@ -9,13 +9,17 @@ import { useAuthContext } from "../../context/AuthContext";
 export default function Weekend() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { clearNotification } = useAuthContext();
+  const { user, clearNotification } = useAuthContext();
 
-  clearNotification("weekend");
+  useEffect(() => {
+    if (user?.notifications?.weekend) {
+      clearNotification("weekend");
+    }
+  }, [user?.notifications?.weekend]);   
 
   useEffect(() => {
     loadItems();
-  }, []);
+  }, [user?.notifications?.weekend]);
 
   const loadItems = async () => {
     setLoading(true);
@@ -44,8 +48,9 @@ export default function Weekend() {
         )}
 
         {!loading && items.map((item) => (
-          <Card key={item._id} data={item} />
+          <Card key={item._id} data={item} reload={loadItems} />
         ))}
+
       </div>
 
       <Link to={siteUrls.addWeekend} className="btn fixed-action">

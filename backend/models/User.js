@@ -47,9 +47,12 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
-    lastWeekendCheck: { type: Date, default: null },
-    lastNewsCheck: { type: Date, default: null },
-    lastChatCheck: { type: Date, default: null },
+    newChat: { type: Boolean, default: false },
+    newNews: { type: Boolean, default: false },
+    newPoll: { type: Boolean, default: false },
+    newCourse: { type: Boolean, default: false },
+    newEvent: { type: Boolean, default: false },
+    newWeekend: { type: Boolean, default: false },
   },
   {
     timestamps: true,

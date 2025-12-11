@@ -11,9 +11,7 @@ export const getAllNews = async (req, res) => {
 
     const items = await News.find(query).sort({ createdAt: -1 });
 
-    await User.findByIdAndUpdate(req.headers["x-user-id"], {
-      lastNewsCheck: new Date(),
-    });
+    await User.findByIdAndUpdate(req.headers["x-user-id"], { newNews: false });
 
     return res.json({
       status: "success",
@@ -55,6 +53,8 @@ export const getOneNews = async (req, res) => {
 export const createNews = async (req, res) => {
   try {
     const item = await News.create(req.body);
+
+    await User.updateMany({}, { $set: { newNews: true } });
 
     return res.status(201).json({
       status: "success",

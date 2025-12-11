@@ -63,6 +63,6 @@ export const apiUrl = {
   events: `${BASE_URL}/events`,
   courses: `${BASE_URL}/courses`,
   chat: `${BASE_URL}/chat`,
-  notifications: `${BASE_URL}/notifications/`,
+  notifications: `${BASE_URL}/users/notify/`,
 };
 

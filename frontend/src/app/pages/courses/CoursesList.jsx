@@ -11,9 +11,15 @@ import { formatDateTime } from '../../utils/utils';
 import AnswerButtons from '../../components/AnswerButtons';
 
 export default function CoursesList() {
-  const { user } = useAuthContext();
+  const { user, clearNotification } = useAuthContext();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user?.notifications?.courses) {
+        clearNotification("courses");
+    }
+}, [user?.notifications?.courses]);
 
   // Load courses
   useEffect(() => {
@@ -28,7 +34,7 @@ export default function CoursesList() {
     };
 
     loadCourses();
-  }, []);
+  }, [user?.notifications?.courses]);
 
   // Delete course
   const deleteCourse = async (id) => {

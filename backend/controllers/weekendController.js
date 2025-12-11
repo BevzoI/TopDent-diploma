@@ -8,9 +8,7 @@ export const getAllWeekend = async (req, res) => {
       .populate("userId", "name clinic birthDate email") // ⬅ додаємо поля користувача
       .sort({ createdAt: -1 });
 
-    await User.findByIdAndUpdate(req.headers["x-user-id"], {
-      lastWeekendCheck: new Date(),
-    });
+      await User.findByIdAndUpdate(req.headers["x-user-id"], { newWeekend: false });
 
     return res.json({
       status: "success",
@@ -52,6 +50,8 @@ export const getOneWeekend = async (req, res) => {
 export const createWeekend = async (req, res) => {
   try {
     const item = await Weekend.create(req.body);
+
+    await User.updateMany({}, { $set: { newWeekend: true } });
 
     return res.status(201).json({
       status: "success",
@@ -140,6 +140,11 @@ export const updateWeekendStatus = async (req, res) => {
         message: "Záznam nebyl nalezen",
       });
     }
+    
+    // Встановити флаг оповіщення
+    await User.findByIdAndUpdate(item.userId, {
+      newWeekend: true
+    });
 
     return res.json({
       status: "success",

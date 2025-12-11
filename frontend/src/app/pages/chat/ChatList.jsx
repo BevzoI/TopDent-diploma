@@ -8,11 +8,17 @@ import { apiRequest, apiUrl } from "../../utils/apiData";
 import { useAuthContext } from "../../context/AuthContext";
 
 export default function ChatList() {
-  const { user } = useAuthContext();
+  const { user, clearNotification } = useAuthContext();
 
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState("");
+
+  useEffect(() => {
+    if (user?.notifications?.chat) {
+        clearNotification("chat");
+    }
+    }, [user?.notifications?.chat]);  
 
   // 🟦 Load all chats
   useEffect(() => {
@@ -29,7 +35,7 @@ export default function ChatList() {
     };
 
     loadChats();
-  }, []);
+  }, [user?.notifications?.chat]);
 
   // 🟦 Delete chat
   const deleteChat = async (id) => {

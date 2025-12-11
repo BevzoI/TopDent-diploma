@@ -12,7 +12,6 @@ import pollRouters from './routes/pollRouters.js';
 import eventRoutes from './routes/eventRoutes.js';
 import courseRoutes from "./routes/courseRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
-import notificationsRoutes from "./routes/notificationsRoutes.js";
 
 const app = express();
 
@@ -32,7 +31,6 @@ app.use('/poll', pollRouters);
 app.use('/events', eventRoutes);
 app.use("/courses", courseRoutes);
 app.use("/chat", chatRoutes);
-app.use("/notifications", notificationsRoutes);
 
 // Vercel або локальний режим
 const isVercel = process.env.VERCEL || process.env.VERCEL_ENV;
