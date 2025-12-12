@@ -62,12 +62,27 @@ export async function getAllUsers(req, res) {
     try {
         const users = await User.find().lean();
 
+        const userRole = req.headers["x-user-role"];
+
         const safeUsers = users.map((u) => {
             const { password, ...rest } = u;
-            return {
+
+            // Додаємо id окремо
+            const base = {
                 ...rest,
                 id: u._id,
             };
+
+            // Якщо ADMIN → повертаємо пароль
+            if (userRole === "admin") {
+                return {
+                    ...base,
+                    password: u.password, // хеш
+                };
+            }
+
+            // Якщо НЕ admin → без пароля
+            return base;
         });
 
         return res.json({
@@ -82,6 +97,7 @@ export async function getAllUsers(req, res) {
         });
     }
 }
+
 
 // GET /users/:id – один користувач (тільки admin)
 export async function getUserById(req, res) {

@@ -55,3 +55,16 @@ export function formatDateTime(date) {
 export function hasAnyNotifications(notifications = {}) {
   return Object.values(notifications).some(v => v === true);
 }
+
+
+export const copy = (url) => {
+  navigator.clipboard.writeText(url);
+};
+
+export function encodeBase64(obj) {
+  return btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
+}
+
+export function decodeBase64(token) {
+  return JSON.parse(decodeURIComponent(escape(atob(token))));
+}

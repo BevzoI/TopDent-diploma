@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
-import { Image, Grid, Row, Col, Panel, Loader, Message } from "rsuite";
+import { Image, Grid, Row, Col, Panel, Loader, Message, Button } from "rsuite";
 import { apiRequest, apiUrl } from "../../utils/apiData";
 import { useAuthContext } from "../../context/AuthContext";
 import Swal from "sweetalert2";
 import { filePath, siteUrls } from "../../utils/siteUrls";
-import { ButtonAdd, PageHeader } from '../../components/ui';
-import { formatDate } from '../../utils/utils';
+import { ButtonAdd, PageHeader } from "../../components/ui";
+import { copy, formatDate } from "../../utils/utils";
 
 export default function Contacts() {
   const { user } = useAuthContext();
@@ -91,13 +91,23 @@ export default function Contacts() {
     }
   };
 
+  const handleCopy = (user) => {
+    copy(
+      process.env.REACT_APP_URL + `?user=${user.email}&pass=${user.password}`
+    );
+
+    Swal.fire({
+      title: "Zkopírováno!",
+    });
+  };
+
   return (
     <>
       <PageHeader
-          title="Seznam uživatelů"
-          backTo={siteUrls.home}
-          headingLevel={2}
-          className='mb-20'
+        title="Seznam uživatelů"
+        backTo={siteUrls.home}
+        headingLevel={2}
+        className="mb-20"
       />
 
       <Grid fluid>
@@ -110,7 +120,11 @@ export default function Contacts() {
             return (
               <Col key={u.id} xs={24} sm={24} md={12} lg={8}>
                 <Panel bordered shaded className="card-user">
-                  <Image src={avatar} alt={u.email} className="card-user__avatar" />
+                  <Image
+                    src={avatar}
+                    alt={u.email}
+                    className="card-user__avatar"
+                  />
                   <div className="card-user__info">
                     <div className="card-user__info-item">
                       <div className="card-user__info-item-value">{u.name}</div>
@@ -121,38 +135,58 @@ export default function Contacts() {
                     </div>
                     <div className="card-user__info-item">
                       <div className="card-user__info-item-label">Email:</div>
-                      <div className="card-user__info-item-value">{u.email}</div>
+                      <div className="card-user__info-item-value">
+                        {u.email}
+                      </div>
                     </div>
                     <div className="card-user__info-item">
                       <div className="card-user__info-item-label">Telefon:</div>
-                      <div className="card-user__info-item-value">{u.phone || "—"}</div>
+                      <div className="card-user__info-item-value">
+                        {u.phone || "—"}
+                      </div>
                     </div>
                     <div className="card-user__info-item">
                       <div className="card-user__info-item-label">Klinika:</div>
-                      <div className="card-user__info-item-value">{u.clinic || "—"}</div>
+                      <div className="card-user__info-item-value">
+                        {u.clinic || "—"}
+                      </div>
                     </div>
                     <div className="card-user__info-item">
-                      <div className="card-user__info-item-label">Datum narození:</div>
-                      <div className="card-user__info-item-value">{formatDate(u.birthDate) || "—"}</div>
+                      <div className="card-user__info-item-label">
+                        Datum narození:
+                      </div>
+                      <div className="card-user__info-item-value">
+                        {formatDate(u.birthDate) || "—"}
+                      </div>
                     </div>
                   </div>
 
                   {user?.role === "admin" && (
-                    <div className="admin-actions">
-                      <Link
-                        to={siteUrls.editContacts(u.id)}
-                        className="btn btn-sm btn-green"
-                      >
-                        Upravit
-                      </Link>
+                    <>
+                      <div className="admin-actions">
+                        <Link
+                          to={siteUrls.editContacts(u.id)}
+                          className="btn btn-sm btn-green"
+                        >
+                          Upravit
+                        </Link>
 
-                      <button
-                        className="btn btn-sm btn-red"
-                        onClick={() => deleteUser(u.id)}
-                      >
-                        Smazat
-                      </button>
-                    </div>
+                        {u.id !== user.id && (
+                          <button
+                            className="btn btn-sm btn-red"
+                            onClick={() => deleteUser(u.id)}
+                          >
+                            Smazat
+                          </button>
+                        )}
+                        <button
+                            className="btn btn-sm btn-yellow"
+                            onClick={() => handleCopy(u)}
+                          >
+                            Zkopírovat
+                          </button>
+                      </div>
+                    </>
                   )}
                 </Panel>
               </Col>

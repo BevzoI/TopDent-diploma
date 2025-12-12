@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { apiRequest, apiUrl } from "../utils/apiData";
+import { decodeBase64, encodeBase64 } from "../utils/utils";
 
 const AuthContextData = createContext();
 
@@ -14,7 +15,7 @@ export default function AuthContext({ children }) {
         if (!token) return null;
 
         try {
-            const payload = JSON.parse(atob(token));
+            const payload = decodeBase64(token);
 
             return {
                 ...payload,
@@ -50,7 +51,7 @@ export default function AuthContext({ children }) {
             };
 
             // Save token
-            const newToken = btoa(JSON.stringify(updatedUser));
+            const newToken = encodeBase64(updatedUser);
             localStorage.setItem("token", newToken);
 
             return updatedUser;
@@ -122,7 +123,7 @@ export default function AuthContext({ children }) {
                 },
             };
 
-            const token = btoa(JSON.stringify(payload));
+            const token = encodeBase64(payload);
             localStorage.setItem("token", token);
 
             setUser(payload);
