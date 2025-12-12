@@ -8,4 +8,6 @@ export const pagesList = [
     { icon: "icon-7",  text: "Kurzy",            to: siteUrls.courses, key: "courses" },
     { icon: "icon-10", text: "Akce",             to: siteUrls.events, key: "events" },
     { icon: "icon-8",  text: "Kontakty",         to: siteUrls.contacts, key: "contacts" },
+    { icon: "icon-9",  text: "Fotogalerie",         to: siteUrls.comingSoon, key: "comingSoon" },
+    { icon: "icon-6",  text: "Výplatní paska",         to: siteUrls.comingSoon, key: "comingSoon" },
 ];

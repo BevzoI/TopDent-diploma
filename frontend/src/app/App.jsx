@@ -4,10 +4,10 @@ import Layout from "./pages/Layout";
 import BodyClass from "./components/layout/BodyClass";
 import AppInit from "./components/layout/AppInit";
 import AuthContext from "./context/AuthContext";
+import ComingSoonPage from "./pages/ComingSoonPage";
 
 const Home = lazy(() => import("./pages/Home"));
 const ErrorPage = lazy(() => import("./pages/ErrorPage"));
-const Vyplatnipaska = lazy(() => import("./pages/VyplatniPaska"));
 const Weekend = lazy(() => import("./pages/weekend/Weekend"));
 const WeekendForm = lazy(() => import("./pages/weekend/WeekendForm"));
 const News = lazy(() => import("./pages/news/News"));
@@ -33,7 +33,6 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<Home />} />
-        <Route path="vyplatni-paska" element={<Vyplatnipaska />} />
         <Route path="weekend">
           <Route index element={<Weekend />} />
           <Route path="add" element={<WeekendForm />} />
@@ -74,7 +73,7 @@ function AppRoutes() {
           <Route path="answers/:id" element={<EventAnswers />} />
         </Route>
 
-
+        <Route path="coming-soon" element={<ComingSoonPage />} />
         <Route path="*" element={<ErrorPage />} />
       </Route>
     </Routes>

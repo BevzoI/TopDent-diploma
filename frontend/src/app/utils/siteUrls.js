@@ -1,5 +1,8 @@
+import ComingSoonPage from "../pages/ComingSoonPage";
+
 export const siteUrls = {
     home: "/",
+    comingSoon: "/coming-soon",
 
     weekend: "/weekend",
     addWeekend: "/weekend/add",

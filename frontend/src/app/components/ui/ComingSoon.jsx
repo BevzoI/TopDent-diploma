@@ -1,6 +1,7 @@
 import Img from "./Img";
 
 export default function ComingSoon() {
+
   return (
     <div className="coming-soon">
         <Img src="./img/in-progress.png" alt="Coming Soon" className="coming-soon__img" />
