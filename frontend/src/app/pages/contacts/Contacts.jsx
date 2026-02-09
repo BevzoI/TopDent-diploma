@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
-import { Image, Grid, Row, Col, Panel, Loader, Message, Button } from "rsuite";
+import { Image, Grid, Row, Col, Panel, Loader, Message } from "rsuite";
 import { apiRequest, apiUrl } from "../../utils/apiData";
 import { useAuthContext } from "../../context/AuthContext";
 import Swal from "sweetalert2";
@@ -162,31 +162,30 @@ export default function Contacts() {
                   </div>
 
                   {user?.role === "admin" && (
-                    <>
-                      <div className="admin-actions">
-                        <Link
-                          to={siteUrls.editContacts(u.id)}
-                          className="btn btn-sm btn-green"
-                        >
-                          Upravit
-                        </Link>
+                    <div className="admin-actions">
+                      <Link
+                        to={siteUrls.editContacts(u.id)}
+                        className="btn btn-sm btn-green"
+                      >
+                        Upravit
+                      </Link>
 
-                        {u.id !== user.id && (
-                          <button
-                            className="btn btn-sm btn-red"
-                            onClick={() => deleteUser(u.id)}
-                          >
-                            Smazat
-                          </button>
-                        )}
+                      {u.id !== user.id && (
                         <button
-                            className="btn btn-sm btn-yellow"
-                            onClick={() => handleCopy(u)}
-                          >
-                            Zkopírovat
-                          </button>
-                      </div>
-                    </>
+                          className="btn btn-sm btn-red"
+                          onClick={() => deleteUser(u.id)}
+                        >
+                          Smazat
+                        </button>
+                      )}
+
+                      <button
+                        className="btn btn-sm btn-yellow"
+                        onClick={() => handleCopy(u)}
+                      >
+                        Zkopírovat
+                      </button>
+                    </div>
                   )}
                 </Panel>
               </Col>

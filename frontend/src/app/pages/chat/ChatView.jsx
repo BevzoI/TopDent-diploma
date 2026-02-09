@@ -16,7 +16,7 @@ export default function ChatView() {
   const [lastTimestamp, setLastTimestamp] = useState(null);
   const scrollRef = useRef();
 
-  // 🔵 Завантаження всього чату при вході
+  // 🔵 Load full chat
   useEffect(() => {
     const loadChat = async () => {
       const res = await apiRequest(`${apiUrl.chat}/${id}`, "GET");
@@ -38,13 +38,13 @@ export default function ChatView() {
     loadChat();
   }, [id]);
 
-  // 🔵 Автооновлення кожні 2 секунди
+  // 🔵 Auto refresh
   useEffect(() => {
     const interval = setInterval(loadNewMessages, 2500);
     return () => clearInterval(interval);
   });
 
-  // 🟢 Завантажуємо тільки нові повідомлення
+  // 🟢 Load only new messages
   const loadNewMessages = async () => {
     if (!lastTimestamp) return;
 
@@ -54,14 +54,12 @@ export default function ChatView() {
 
     if (res?.status === "success" && res.data.length > 0) {
       setMessages((prev) => [...prev, ...res.data]);
-
       setLastTimestamp(res.data[res.data.length - 1].createdAt);
-
       scrollToBottom();
     }
   };
 
-  // 🟢 Відправка повідомлення
+  // 🟢 Send message
   const sendMessage = async () => {
     if (!text.trim()) return;
 
@@ -73,11 +71,8 @@ export default function ChatView() {
     const res = await apiRequest(`${apiUrl.chat}/${id}/message`, "POST", payload);
 
     if (res?.status === "success") {
-      // додаємо одразу, не чекаємо інтервал
       setMessages((prev) => [...prev, res.data.messages.at(-1)]);
-
       setLastTimestamp(res.data.messages.at(-1).createdAt);
-
       setText("");
       scrollToBottom();
     }
@@ -93,23 +88,40 @@ export default function ChatView() {
 
   return (
     <div className="chat-view">
-      <h3>{chat.title}</h3>
+      {/* 🔹 Chat header with avatar */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+        <Avatar circle size="lg">
+          {chat.title?.charAt(0)}
+        </Avatar>
+        <h3 style={{ margin: 0 }}>{chat.title}</h3>
+      </div>
 
       <List hover>
         {messages.map((msg) => {
-          const isMine = msg.sender === user._id || msg.sender?._id === user._id;
+          const isMine =
+            msg.sender === user._id || msg.sender?._id === user._id;
 
           return (
             <List.Item
               key={msg._id}
               style={{
-                textAlign: isMine ? "right" : "left",
+                display: "flex",
+                justifyContent: isMine ? "flex-end" : "flex-start",
                 padding: "10px 5px",
               }}
             >
+              {!isMine && (
+                <Avatar
+                  circle
+                  size="sm"
+                  style={{ marginRight: 8 }}
+                >
+                  {(msg.sender?.name || msg.sender?.email)?.charAt(0)}
+                </Avatar>
+              )}
+
               <div
                 style={{
-                  display: "inline-block",
                   background: isMine ? "#d0f0d0" : "#e8e8e8",
                   borderRadius: 8,
                   padding: "8px 12px",
@@ -133,7 +145,10 @@ export default function ChatView() {
         <div ref={scrollRef}></div>
       </List>
 
-      <div className="chat-input" style={{ marginTop: 20, display: "flex", gap: 8 }}>
+      <div
+        className="chat-input"
+        style={{ marginTop: 20, display: "flex", gap: 8 }}
+      >
         <Input
           value={text}
           onChange={(v) => setText(v)}

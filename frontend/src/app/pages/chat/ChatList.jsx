@@ -14,11 +14,12 @@ export default function ChatList() {
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState("");
 
+  // 🔔 Clear chat notification badge
   useEffect(() => {
     if (user?.notifications?.chat) {
-        clearNotification("chat");
+      clearNotification("chat");
     }
-    }, [user?.notifications?.chat]);  
+  }, [user?.notifications?.chat, clearNotification]);
 
   // 🟦 Load all chats
   useEffect(() => {
@@ -35,7 +36,7 @@ export default function ChatList() {
     };
 
     loadChats();
-  }, [user?.notifications?.chat]);
+  }, []);
 
   // 🟦 Delete chat
   const deleteChat = async (id) => {

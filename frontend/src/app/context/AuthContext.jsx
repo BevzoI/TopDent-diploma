@@ -66,7 +66,7 @@ export default function AuthContext({ children }) {
     };
 
     // ------------------------
-    // Load notifications ONCE after user login loaded
+    // Load notifications after user loaded
     // ------------------------
     useEffect(() => {
         if (!user?.id && !user?._id) {
@@ -86,7 +86,7 @@ export default function AuthContext({ children }) {
         };
 
         fetchNotifications();
-    }, []); // ← IMPORTANT: load notifications ONLY once on first mount
+    }, [user?.id, user?._id]);
 
     // ------------------------
     // Login via URL params
