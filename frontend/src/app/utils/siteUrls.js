@@ -1,4 +1,3 @@
-import ComingSoonPage from "../pages/ComingSoonPage";
 
 export const siteUrls = {
     home: "/",
