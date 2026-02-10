@@ -1,26 +1,28 @@
 import { useEffect, useState } from "react";
-import { Card, Button, Heading, Text } from "rsuite";
+import { Card, Heading, Text } from "rsuite";
 import { Link } from "react-router-dom";
 
 import { siteUrls } from "../../utils/siteUrls";
 import { apiRequest, apiUrl } from "../../utils/apiData";
 import { ButtonAdd, PageHeader } from "../../components/ui";
 import { useAuthContext } from "../../context/AuthContext";
-import { formatDateTime } from '../../utils/utils';
-import AnswerButtons from '../../components/AnswerButtons';
+
+import { formatDateTime } from "../../utils/utils";
+import AnswerButtons from "../../components/AnswerButtons";
 
 export default function EventList() {
   const { user, clearNotification } = useAuthContext();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // 🔔 Clear notification badge
   useEffect(() => {
     if (user?.notifications?.events) {
-        clearNotification("events");
+      clearNotification("events");
     }
-}, [user?.notifications?.events]);
+  }, [user?.notifications?.events, clearNotification]);
 
-  // Load all events
+  // 📦 Load events (once)
   useEffect(() => {
     const loadEvents = async () => {
       const res = await apiRequest(apiUrl.events, "GET");
@@ -33,9 +35,9 @@ export default function EventList() {
     };
 
     loadEvents();
-  }, [user?.notifications?.events]);
+  }, []);
 
-  // Delete event
+  // 🗑 Delete event
   const deleteEvent = async (id) => {
     const confirmDelete = window.confirm("Opravdu chcete smazat tuto událost?");
     if (!confirmDelete) return;
@@ -61,46 +63,50 @@ export default function EventList() {
 
       <div className="card-list">
         {!loading &&
-          events.map((ev) => (
-            <Card key={ev._id} shaded className="mb-20">
+          events.map((event) => (
+            <Card key={event._id} shaded className="mb-20">
               <Card.Header>
-                <Heading level={5} size="md" bold>
-                  <Link to={siteUrls.eventAnswers(ev._id)}>{ev.title}</Link>
+                <Heading level={5} size="md">
+                  <Link to={siteUrls.viewEventChoice(event._id)}>
+                    {event.title}
+                  </Link>
                 </Heading>
               </Card.Header>
 
               <Card.Body>
-                {ev.description && (
+                {event.description && (
                   <Text style={{ display: "block", marginBottom: 8 }}>
-                    {ev.description}
+                    {event.description}
                   </Text>
                 )}
 
-                {ev.address && (
-                  <Text muted style={{ display: "block", marginBottom: 8 }}>
-                    📍 {ev.address}
+                {event.location && (
+                  <Text muted style={{ display: "block", marginBottom: 6 }}>
+                    📍 {event.location}
                   </Text>
                 )}
 
-                <Text muted>🕒 {formatDateTime(ev.dateTime)}</Text>
+                <Text muted>🕒 {formatDateTime(event.dateTime)}</Text>
               </Card.Body>
 
               <Card.Footer>
-			  <AnswerButtons
-				type="events"
-				itemId={ev._id}
-				initialAnswers={ev.answers}
-				yesLabel="Přijdu"
-				noLabel="Nepřijdu"
-				/>
-
+                <AnswerButtons
+                  type="events"
+                  itemId={event._id}
+                  initialAnswers={event.answers}
+                  yesLabel="Zúčastním se"
+                  noLabel="Nezúčastním se"
+                />
               </Card.Footer>
 
               {/* ADMIN ACTIONS */}
               {user?.role === "admin" && (
-                <div className="admin-actions" style={{ padding: "0 18px 24px" }}>
+                <div
+                  className="admin-actions"
+                  style={{ padding: "0 18px 24px" }}
+                >
                   <Link
-                    to={siteUrls.editEvent(ev._id)}
+                    to={siteUrls.editEvent(event._id)}
                     className="btn btn-sm btn-green"
                   >
                     Upravit
@@ -108,19 +114,19 @@ export default function EventList() {
 
                   <button
                     className="btn btn-sm btn-red"
-                    onClick={() => deleteEvent(ev._id)}
+                    onClick={() => deleteEvent(event._id)}
                   >
                     Smazat
                   </button>
 
                   <p
                     className={`admin-status ${
-                      ev.publish === "show"
+                      event.publish === "show"
                         ? "admin-status-published"
                         : "admin-status-hidden"
                     }`}
                   >
-                    {ev.publish === "show" ? "Zobrazeno" : "Skryto"}
+                    {event.publish === "show" ? "Zobrazeno" : "Skryto"}
                   </p>
                 </div>
               )}
@@ -128,9 +134,7 @@ export default function EventList() {
           ))}
       </div>
 
-      {user?.role === "admin" && (
-        <ButtonAdd link={siteUrls.addEvent} />
-      )}
+      {user?.role === "admin" && <ButtonAdd link={siteUrls.addEvent} />}
     </>
   );
 }

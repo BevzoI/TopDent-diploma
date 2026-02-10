@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { Card, PageHeader } from '../../components/ui';
+import { Card, PageHeader } from "../../components/ui";
 import { apiRequest, apiUrl } from "../../utils/apiData";
-import { siteUrls } from '../../utils/siteUrls';
+import { siteUrls } from "../../utils/siteUrls";
 import { useAuthContext } from "../../context/AuthContext";
 
 export default function Weekend() {
@@ -11,15 +11,17 @@ export default function Weekend() {
   const [loading, setLoading] = useState(true);
   const { user, clearNotification } = useAuthContext();
 
+  // 🔔 Clear weekend notification
   useEffect(() => {
     if (user?.notifications?.weekend) {
       clearNotification("weekend");
     }
-  }, [user?.notifications?.weekend]);   
+  }, [user?.notifications?.weekend, clearNotification]);
 
+  // 📦 Load items (once)
   useEffect(() => {
     loadItems();
-  }, [user?.notifications?.weekend]);
+  }, []);
 
   const loadItems = async () => {
     setLoading(true);
@@ -43,14 +45,12 @@ export default function Weekend() {
       <div className="card-list">
         {loading && <p>Načítám...</p>}
 
-        {!loading && items.length === 0 && (
-          <p>Žádné omluvenky.</p>
-        )}
+        {!loading && items.length === 0 && <p>Žádné omluvenky.</p>}
 
-        {!loading && items.map((item) => (
-          <Card key={item._id} data={item} reload={loadItems} />
-        ))}
-
+        {!loading &&
+          items.map((item) => (
+            <Card key={item._id} data={item} reload={loadItems} />
+          ))}
       </div>
 
       <Link to={siteUrls.addWeekend} className="btn fixed-action">
@@ -59,4 +59,3 @@ export default function Weekend() {
     </>
   );
 }
-
