@@ -1,12 +1,9 @@
 const BASE_URL = process.env.REACT_APP_API_URL;
 
-// Універсальний запит для JSON
 export async function apiRequest(url = "", method = "GET", data = null) {
-
     try {
         const options = { method, headers: {} };
 
-        // Додаємо роль з token (якщо є)
         const token = localStorage.getItem("token");
         if (token) {
             try {
@@ -42,8 +39,7 @@ export async function apiRequest(url = "", method = "GET", data = null) {
             };
         }
 
-        const json = await response.json();
-        return json; // очікуємо { status: "success", data: ... }
+        return await response.json();
 
     } catch (error) {
         console.error("❌ API error:", error);
@@ -58,6 +54,7 @@ export const apiUrl = {
   news: `${BASE_URL}/news`,
   auth: `${BASE_URL}/auth`,
   users: `${BASE_URL}/users`,
+  groups: `${BASE_URL}/groups`, // 🔥 ДОДАНО
   weekend: `${BASE_URL}/weekend`,
   poll: `${BASE_URL}/poll`,
   events: `${BASE_URL}/events`,
@@ -65,4 +62,3 @@ export const apiUrl = {
   chat: `${BASE_URL}/chat`,
   notifications: `${BASE_URL}/users/notify/`,
 };
-
