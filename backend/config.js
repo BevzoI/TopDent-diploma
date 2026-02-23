@@ -12,3 +12,6 @@ export const MONGO_USERNAME = process.env.MONGO_USERNAME;
 export const MONGO_PASSWORD = process.env.MONGO_PASSWORD;
 export const MONGO_CLUSTER = process.env.MONGO_CLUSTER;
 export const MONGO_DB = process.env.MONGO_DB;
+
+// Auth
+export const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";

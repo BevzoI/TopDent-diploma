@@ -1,9 +1,15 @@
-// routes/authRouters.js
 import express from "express";
-import * as authController from '../controllers/authController.js';
+import { login, checkInvite, setPassword } from "../controllers/authController.js";
 
 const router = express.Router();
 
-router.post("/", authController.auth);
+// 🔐 LOGIN
+router.post("/", login);
+
+// 🔍 CHECK INVITE
+router.get("/invite/:token", checkInvite);
+
+// 🔑 SET PASSWORD
+router.post("/set-password", setPassword);
 
 export default router;

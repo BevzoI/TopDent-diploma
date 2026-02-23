@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: false,
-      select: false, // 🔥 не віддавати пароль у запитах
+      select: false,
     },
 
     role: {
@@ -49,6 +49,14 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+
+    // 🏥 GROUPS (може бути необмежена кількість)
+    groups: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Group",
+      },
+    ],
 
     // 🔔 Notifications
     newChat: { type: Boolean, default: false },
