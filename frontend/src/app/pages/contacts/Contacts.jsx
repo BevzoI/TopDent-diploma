@@ -54,7 +54,6 @@ export default function Contacts() {
     );
   }
 
-  // DELETE USER
   const deleteUser = async (id) => {
     const result = await Swal.fire({
       title: "Opravdu chcete smazat uživatele?",
@@ -125,32 +124,46 @@ export default function Contacts() {
                     alt={u.email}
                     className="card-user__avatar"
                   />
+
                   <div className="card-user__info">
                     <div className="card-user__info-item">
-                      <div className="card-user__info-item-value">{u.name}</div>
+                      <div className="card-user__info-item-value">{u.name || "—"}</div>
                     </div>
+
                     <div className="card-user__info-item">
                       <div className="card-user__info-item-label">Role:</div>
                       <div className="card-user__info-item-value">{u.role}</div>
                     </div>
+
                     <div className="card-user__info-item">
                       <div className="card-user__info-item-label">Email:</div>
-                      <div className="card-user__info-item-value">
-                        {u.email}
-                      </div>
+                      <div className="card-user__info-item-value">{u.email}</div>
                     </div>
+
                     <div className="card-user__info-item">
                       <div className="card-user__info-item-label">Telefon:</div>
                       <div className="card-user__info-item-value">
                         {u.phone || "—"}
                       </div>
                     </div>
+
                     <div className="card-user__info-item">
                       <div className="card-user__info-item-label">Klinika:</div>
                       <div className="card-user__info-item-value">
                         {u.clinic || "—"}
                       </div>
                     </div>
+
+                    {/* 🔥 GROUPS BLOCK */}
+                    <div className="card-user__info-item">
+                      <div className="card-user__info-item-label">Skupiny:</div>
+                      <div className="card-user__info-item-value">
+                        {u.groups && u.groups.length > 0
+                          ? u.groups.map((g) => g.name).join(", ")
+                          : "—"}
+                      </div>
+                    </div>
+
                     <div className="card-user__info-item">
                       <div className="card-user__info-item-label">
                         Datum narození:

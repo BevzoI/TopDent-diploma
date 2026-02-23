@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ButtonToolbar, Button, Message, Input } from "rsuite";
+import { ButtonToolbar, Button, Message, Input, SelectPicker } from "rsuite";
 
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -19,6 +19,7 @@ export default function ContactsForm() {
 
   const [apiError, setApiError] = useState("");
   const [apiSuccess, setApiSuccess] = useState("");
+  const [groups, setGroups] = useState([]);
 
   const schema = yup.object({
     email: yup.string().email("Neplatný email").required("Email je povinný"),
@@ -31,6 +32,7 @@ export default function ContactsForm() {
       .notRequired(),
     name: yup.string().max(120).nullable(),
     clinic: yup.string().max(120).nullable(),
+    groups: yup.array().of(yup.string()).nullable(),
   });
 
   const {
@@ -47,11 +49,24 @@ export default function ContactsForm() {
       password: "",
       name: "",
       clinic: "",
+      groups: [],
     },
   });
 
   const editingSelf = isEdit && currentUser?.id === id;
 
+  // 🔥 Load groups
+  useEffect(() => {
+    const loadGroups = async () => {
+      const res = await apiRequest(apiUrl.groups);
+      if (res?.status === "success") {
+        setGroups(res.groups);
+      }
+    };
+    loadGroups();
+  }, []);
+
+  // 🔥 Load user for edit
   useEffect(() => {
     if (!isEdit) return;
 
@@ -65,6 +80,7 @@ export default function ContactsForm() {
           role: res.user.role || "user",
           name: res.user.name || "",
           clinic: res.user.clinic || "",
+          groups: res.user.groups?.map((g) => g._id) || [],
         });
       } else {
         setApiError("Nepodařilo se načíst uživatele.");
@@ -83,6 +99,7 @@ export default function ContactsForm() {
       phone: values.phone.trim(),
       name: values.name?.trim() || "",
       clinic: values.clinic?.trim() || "",
+      groups: values.groups || [],
     };
 
     if (!editingSelf) payload.role = values.role;
@@ -144,6 +161,28 @@ export default function ContactsForm() {
           name="clinic"
           control={control}
           render={({ field }) => <Input {...field} />}
+        />
+      </Field>
+
+      {/* 🔥 GROUPS SELECT */}
+      <Field label="Skupiny">
+        <Controller
+          name="groups"
+          control={control}
+          render={({ field }) => (
+            <SelectPicker
+              {...field}
+              data={groups.map((g) => ({
+                label: g.name,
+                value: g._id,
+              }))}
+              style={{ width: "100%" }}
+              placeholder="Vyberte skupiny"
+              multiple
+              searchable
+              cleanable
+            />
+          )}
         />
       </Field>
 
