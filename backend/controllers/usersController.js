@@ -35,11 +35,16 @@ export async function createUser(req, res) {
       groups: Array.isArray(groups) ? groups : [],
     });
 
-    const populatedUser = await User.findById(newUser._id).populate("groups");
+    const populatedUser = await User.findById(newUser._id)
+      .populate("groups")
+      .lean();
 
     return res.json({
       status: "success",
-      user: populatedUser,
+      user: {
+        ...populatedUser,
+        id: populatedUser._id,
+      },
     });
   } catch (error) {
     console.error("Create user error:", error);
@@ -55,11 +60,18 @@ export async function createUser(req, res) {
 // -------------------------
 export async function getAllUsers(req, res) {
   try {
-    const users = await User.find().populate("groups");
+    const users = await User.find()
+      .populate("groups")
+      .lean();
+
+    const formattedUsers = users.map((u) => ({
+      ...u,
+      id: u._id,
+    }));
 
     return res.json({
       status: "success",
-      users,
+      users: formattedUsers,
     });
   } catch (error) {
     console.error("Get all users error:", error);
@@ -77,7 +89,9 @@ export async function getUserById(req, res) {
   try {
     const { id } = req.params;
 
-    const user = await User.findById(id).populate("groups");
+    const user = await User.findById(id)
+      .populate("groups")
+      .lean();
 
     if (!user) {
       return res.status(404).json({
@@ -88,7 +102,10 @@ export async function getUserById(req, res) {
 
     return res.json({
       status: "success",
-      user,
+      user: {
+        ...user,
+        id: user._id,
+      },
     });
   } catch (error) {
     console.error("Get user error:", error);
@@ -131,7 +148,6 @@ export async function updateUserById(req, res) {
       updateData.password = password.trim();
     }
 
-    // 🔥 GROUPS FIX
     if (Array.isArray(groups)) {
       updateData.groups = groups;
     }
@@ -143,7 +159,6 @@ export async function updateUserById(req, res) {
           public_id: `user_${id}`,
           overwrite: true,
         });
-
         updateData.avatar = upload.secure_url;
       } else {
         updateData.avatar = avatar;
@@ -152,7 +167,9 @@ export async function updateUserById(req, res) {
 
     const updatedUser = await User.findByIdAndUpdate(id, updateData, {
       new: true,
-    }).populate("groups");
+    })
+      .populate("groups")
+      .lean();
 
     if (!updatedUser) {
       return res.status(404).json({
@@ -163,7 +180,10 @@ export async function updateUserById(req, res) {
 
     return res.json({
       status: "success",
-      user: updatedUser,
+      user: {
+        ...updatedUser,
+        id: updatedUser._id,
+      },
     });
   } catch (error) {
     console.error("Update user error:", error);
@@ -202,7 +222,7 @@ export async function getUserNotifications(req, res) {
   try {
     const { userId } = req.params;
 
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).lean();
 
     if (!user) {
       return res.status(404).json({
