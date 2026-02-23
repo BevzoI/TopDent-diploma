@@ -1,7 +1,5 @@
 import User from "../models/User.js";
-import Group from "../models/Group.js";
 import cloudinary from "../utils/cloudinary.js";
-import { toSafeUser } from "../utils/utils.js";
 
 // -------------------------
 // CREATE USER
@@ -37,9 +35,11 @@ export async function createUser(req, res) {
       groups: Array.isArray(groups) ? groups : [],
     });
 
+    const populatedUser = await User.findById(newUser._id).populate("groups");
+
     return res.json({
       status: "success",
-      user: newUser,
+      user: populatedUser,
     });
   } catch (error) {
     console.error("Create user error:", error);
@@ -55,7 +55,7 @@ export async function createUser(req, res) {
 // -------------------------
 export async function getAllUsers(req, res) {
   try {
-    const users = await User.find().populate("groups").lean();
+    const users = await User.find().populate("groups");
 
     return res.json({
       status: "success",
@@ -190,6 +190,43 @@ export async function deleteUser(req, res) {
     console.error("Delete user error:", error);
     return res.status(500).json({
       status: "error",
+      message: "Chyba serveru při mazání.",
+    });
+  }
+}
+
+// -------------------------
+// GET USER NOTIFICATIONS
+// -------------------------
+export async function getUserNotifications(req, res) {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        status: "error",
+        message: "Uživatel nebyl nalezen.",
+      });
+    }
+
+    return res.json({
+      status: "success",
+      data: {
+        news: user.newNews,
+        chat: user.newChat,
+        poll: user.newPoll,
+        courses: user.newCourse,
+        events: user.newEvent,
+        weekend: user.newWeekend,
+      },
+    });
+  } catch (error) {
+    console.error("Notifications error:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Chyba serveru.",
     });
   }
 }
