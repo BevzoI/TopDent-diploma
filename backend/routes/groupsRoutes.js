@@ -1,12 +1,14 @@
 import express from "express";
-import { getAllGroups, createGroup } from "../controllers/groupsController.js";
+import {
+  getGroups,
+  createGroup,
+  deleteGroup,
+} from "../controllers/groupsController.js";
 
 const router = express.Router();
 
-// GET всі групи
-router.get("/", getAllGroups);
-
-// POST створити групу (поки без middleware)
+router.get("/", getGroups);
 router.post("/", createGroup);
+router.delete("/:id", deleteGroup);
 
 export default router;
