@@ -1,123 +1,186 @@
 import Chat from "../models/Chat.js";
 import User from "../models/User.js";
 
+// 🔐 Helper – перевірка доступу
+async function checkAccess(chat, user) {
+  if (!chat.groups || chat.groups.length === 0) return true;
+
+  const userGroups = user.groups.map((g) => g.toString());
+
+  return chat.groups.some((g) =>
+    userGroups.includes(g.toString())
+  );
+}
+
+// -------------------------
+// GET ALL CHATS (по групах)
+// -------------------------
+export async function getChats(req, res) {
+  try {
+    const userId = req.headers["x-user-id"];
+
+    const user = await User.findById(userId);
+
+    if (!user) return res.status(404).json({ status: "error" });
+
+    const chats = await Chat.find({
+      $or: [
+        { groups: { $size: 0 } },
+        { groups: { $in: user.groups } },
+      ],
+    })
+      .populate("groups")
+      .lean();
+
+    return res.json({
+      status: "success",
+      data: chats.map((c) => ({ ...c, id: c._id })),
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: "error" });
+  }
+}
+
+// -------------------------
+// GET SINGLE CHAT
+// -------------------------
+export async function getChatById(req, res) {
+  try {
+    const { id } = req.params;
+    const userId = req.headers["x-user-id"];
+
+    const user = await User.findById(userId);
+    const chat = await Chat.findById(id)
+      .populate("groups")
+      .populate("messages.sender")
+      .lean();
+
+    if (!chat) {
+      return res.status(404).json({ status: "error" });
+    }
+
+    const allowed = await checkAccess(chat, user);
+
+    if (!allowed) {
+      return res.status(403).json({ status: "error" });
+    }
+
+    return res.json({
+      status: "success",
+      data: { ...chat, id: chat._id },
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: "error" });
+  }
+}
+
+// -------------------------
 // CREATE CHAT
-export const createChat = async (req, res) => {
-    try {
-        const chat = await Chat.create({
-            title: req.body.title,
-            members: req.body.members,
-            publish: req.body.publish,
-            createdBy: req.userId, // якщо передаєш у header
-        });
+// -------------------------
+export async function createChat(req, res) {
+  try {
+    const { title, publish, groups } = req.body;
 
-        await User.updateMany({}, { $set: { newChat: true } });
+    const newChat = await Chat.create({
+      title,
+      publish,
+      groups: Array.isArray(groups) ? groups : [],
+      messages: [],
+    });
 
-        return res.json({ status: "success", data: chat });
-    } catch (err) {
-        return res.status(500).json({ status: "error", message: "Nepodařilo se vytvořit chat" });
-    }
-};
+    const populated = await Chat.findById(newChat._id)
+      .populate("groups")
+      .lean();
 
-// GET ALL CHATS
-export const getAllChats = async (req, res) => {
-    try {
-        const userId = req.headers["x-user-id"];
+    return res.json({
+      status: "success",
+      data: { ...populated, id: populated._id },
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: "error" });
+  }
+}
 
-        const chats = await Chat.find({
-            $or: [
-                { members: [] }, // ALL USERS
-                { members: userId }, // user is a member
-                { publish: "show" }, // public chats
-            ],
-        }).sort({ updatedAt: -1 });
-
-        await User.findByIdAndUpdate(req.headers["x-user-id"], { newChat: false });
-
-        return res.json({ status: "success", data: chats });
-    } catch (err) {
-        return res.status(500).json({ status: "error", message: "Nepodařilo se načíst chaty" });
-    }
-};
-
-// GET ONE CHAT + messages
-export const getOneChat = async (req, res) => {
-    try {
-        const chat = await Chat.findById(req.params.id).populate("messages.sender", "name avatar email");
-
-        if (!chat) {
-            return res.status(404).json({ status: "error", message: "Chat nenalezen" });
-        }
-
-        return res.json({ status: "success", data: chat });
-    } catch (err) {
-        return res.status(500).json({ status: "error", message: "Chyba při načítání chatu" });
-    }
-};
-
+// -------------------------
 // UPDATE CHAT
-export const updateChat = async (req, res) => {
-    try {
-        const chat = await Chat.findByIdAndUpdate(req.params.id, req.body, { new: true });
+// -------------------------
+export async function updateChat(req, res) {
+  try {
+    const { id } = req.params;
+    const { title, publish, groups } = req.body;
 
-        return res.json({ status: "success", data: chat });
-    } catch (err) {
-        return res.status(500).json({ status: "error", message: "Nepodařilo se upravit chat" });
-    }
-};
+    const updated = await Chat.findByIdAndUpdate(
+      id,
+      {
+        title,
+        publish,
+        groups: Array.isArray(groups) ? groups : [],
+      },
+      { new: true }
+    )
+      .populate("groups")
+      .lean();
 
+    return res.json({
+      status: "success",
+      data: { ...updated, id: updated._id },
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: "error" });
+  }
+}
+
+// -------------------------
 // DELETE CHAT
-export const deleteChat = async (req, res) => {
-    try {
-        await Chat.findByIdAndDelete(req.params.id);
+// -------------------------
+export async function deleteChat(req, res) {
+  try {
+    const { id } = req.params;
+    await Chat.findByIdAndDelete(id);
+    return res.json({ status: "success" });
+  } catch (error) {
+    return res.status(500).json({ status: "error" });
+  }
+}
 
-        return res.json({ status: "success", message: "Chat byl smazán" });
-    } catch (err) {
-        return res.status(500).json({ status: "error", message: "Nepodařilo se smazat chat" });
-    }
-};
-
+// -------------------------
 // SEND MESSAGE
-export const sendMessage = async (req, res) => {
-    try {
-        const { content, sender } = req.body;
+// -------------------------
+export async function sendMessage(req, res) {
+  try {
+    const { id } = req.params;
+    const { content } = req.body;
+    const sender = req.headers["x-user-id"];
 
-        const chat = await Chat.findById(req.params.id);
-        if (!chat) {
-            return res.status(404).json({ status: "error", message: "Chat nenalezen" });
-        }
+    const user = await User.findById(sender);
+    const chat = await Chat.findById(id);
 
-        chat.messages.push({ sender, content });
-        await chat.save();
+    if (!chat) return res.status(404).json({ status: "error" });
 
-        return res.json({ status: "success", data: chat });
-    } catch (err) {
-        return res.status(500).json({ status: "error", message: "Nepodařilo se odeslat zprávu" });
-    }
-};
+    const allowed = await checkAccess(chat, user);
+    if (!allowed) return res.status(403).json({ status: "error" });
 
-export const getNewMessages = async (req, res) => {
-    try {
-        const chatId = req.params.id;
-        const since = req.query.since ? new Date(req.query.since) : null;
+    chat.messages.push({
+      content,
+      sender,
+    });
 
-        const chat = await Chat.findById(chatId).select("messages");
+    await chat.save();
 
-        if (!chat) {
-            return res.status(404).json({ status: "error", message: "Chat nenalezen" });
-        }
+    const updated = await Chat.findById(id)
+      .populate("messages.sender")
+      .lean();
 
-        let msgs = chat.messages;
-
-        if (since) {
-            msgs = msgs.filter((msg) => msg.createdAt > since);
-        }
-
-        return res.json({
-            status: "success",
-            data: msgs,
-        });
-    } catch (err) {
-        return res.status(500).json({ status: "error", message: "Chyba při načítání zpráv" });
-    }
-};
+    return res.json({
+      status: "success",
+      data: { ...updated, id: updated._id },
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: "error" });
+  }
+}
