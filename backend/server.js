@@ -1,4 +1,3 @@
-// server.js
 import { PORT } from './config.js';
 import express from 'express';
 import bodyParser from 'body-parser';
@@ -13,7 +12,7 @@ import pollRouters from './routes/pollRouters.js';
 import eventRoutes from './routes/eventRoutes.js';
 import courseRoutes from "./routes/courseRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
-import groupsRoutes from "./routes/groupsRoutes.js"; // 🔥 ДОДАНО
+import groupsRoutes from "./routes/groupsRoutes.js"; // 🔥 ОБОВʼЯЗКОВО
 
 const app = express();
 
@@ -23,29 +22,22 @@ app.use(cors());
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
-// Health check
-app.get('/', (req, res) => { 
-  res.send('Api work!') 
-});
+app.get('/', (req, res) => { res.send('Api work!') });
 
-// API routes
 app.use('/news', newsRouters);
 app.use('/auth', authRouters);
 app.use('/users', usersRouters);
-app.use('/groups', groupsRoutes); // 🔥 ДОДАНО
 app.use('/weekend', weekendRouters);
 app.use('/poll', pollRouters);
 app.use('/events', eventRoutes);
 app.use("/courses", courseRoutes);
 app.use("/chat", chatRoutes);
+app.use("/groups", groupsRoutes); // 🔥 ОБОВʼЯЗКОВО
 
-// Local / Vercel
-const isVercel = process.env.VERCEL || process.env.VERCEL_ENV;
-
-if (!isVercel) {
-	app.listen(PORT, () => {
-		console.log(`Server is running locally at http://localhost:${PORT}`);
-	});
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
+  });
 }
 
 export default app;
