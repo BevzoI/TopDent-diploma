@@ -1,4 +1,3 @@
-// controllers/authController.js
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import Invite from "../models/Invite.js";
@@ -6,7 +5,6 @@ import { generateToken } from "../utils/jwt.js";
 
 /**
  * 🔐 LOGIN
- * email + password + JWT
  */
 export async function login(req, res) {
   const { email, password } = req.body;
@@ -39,49 +37,18 @@ export async function login(req, res) {
 
     const token = generateToken(user);
 
-    const userObj = user.toObject();
-    delete userObj.password;
-
     return res.json({
       status: "success",
-      token, // 🔥 ОСЬ ВАЖЛИВЕ
+      token,
       user: {
         id: user._id,
-        ...userObj,
+        email: user.email,
+        role: user.role,
+        name: user.name,
       },
     });
   } catch (error) {
     console.error("Login error:", error);
-    return res.status(500).json({
-      status: "error",
-      message: "Chyba serveru při přihlášení.",
-    });
-  }
-}
-
-/**
- * 🔍 CHECK INVITE TOKEN
- * GET /auth/invite/:token
- */
-export async function checkInvite(req, res) {
-  const { token } = req.params;
-
-  try {
-    const invite = await Invite.findOne({ token });
-
-    if (
-      !invite ||
-      invite.used ||
-      invite.expiresAt < new Date()
-    ) {
-      return res.status(400).json({
-        status: "error",
-        message: "Neplatný nebo expirovaný odkaz.",
-      });
-    }
-
-    return res.json({ valid: true });
-  } catch (error) {
     return res.status(500).json({
       status: "error",
       message: "Chyba serveru.",
@@ -90,7 +57,29 @@ export async function checkInvite(req, res) {
 }
 
 /**
- * 🔑 SET PASSWORD (invite flow)
+ * 🔍 CHECK INVITE
+ */
+export async function checkInvite(req, res) {
+  const { token } = req.params;
+
+  try {
+    const invite = await Invite.findOne({ token });
+
+    if (!invite || invite.used || invite.expiresAt < new Date()) {
+      return res.status(400).json({
+        status: "error",
+        message: "Neplatný nebo expirovaný odkaz.",
+      });
+    }
+
+    return res.json({ status: "success" });
+  } catch (error) {
+    return res.status(500).json({ status: "error" });
+  }
+}
+
+/**
+ * 🔑 SET PASSWORD + AUTO LOGIN
  */
 export async function setPassword(req, res) {
   const { token, password } = req.body;
@@ -105,11 +94,7 @@ export async function setPassword(req, res) {
   try {
     const invite = await Invite.findOne({ token }).populate("user");
 
-    if (
-      !invite ||
-      invite.used ||
-      invite.expiresAt < new Date()
-    ) {
+    if (!invite || invite.used || invite.expiresAt < new Date()) {
       return res.status(400).json({
         status: "error",
         message: "Neplatný nebo expirovaný odkaz.",
@@ -125,15 +110,20 @@ export async function setPassword(req, res) {
     invite.used = true;
     await invite.save();
 
+    const jwtToken = generateToken(invite.user);
+
     return res.json({
       status: "success",
-      message: "Heslo bylo úspěšně nastaveno.",
+      token: jwtToken,
+      user: {
+        id: invite.user._id,
+        email: invite.user.email,
+        role: invite.user.role,
+        name: invite.user.name,
+      },
     });
   } catch (error) {
-    console.error("Set password error:", error);
-    return res.status(500).json({
-      status: "error",
-      message: "Chyba serveru.",
-    });
+    console.error(error);
+    return res.status(500).json({ status: "error" });
   }
 }
