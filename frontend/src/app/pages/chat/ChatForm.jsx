@@ -6,6 +6,7 @@ import {
   ButtonToolbar,
   Input,
   SelectPicker,
+  CheckPicker,
   Message,
 } from "rsuite";
 import { useForm, Controller } from "react-hook-form";
@@ -17,20 +18,19 @@ import { apiRequest, apiUrl } from "../../utils/apiData";
 import { siteUrls } from "../../utils/siteUrls";
 import { PageHeader } from "../../components/ui";
 
-// ✔ yup schema
+// ✅ SCHEMA
 const schema = yup.object({
   title: yup.string().required("Název je povinný"),
   publish: yup.string().oneOf(["show", "hide"]).required(),
-  members: yup.array().min(1, "Vyberte alespoň jednoho uživatele"),
+  groups: yup.array().of(yup.string()),
 });
 
 export default function ChatForm() {
   const { id } = useParams();
   const isEdit = Boolean(id);
-
   const navigate = useNavigate();
 
-  const [usersList, setUsersList] = useState([]);
+  const [groupsList, setGroupsList] = useState([]);
   const [apiError, setApiError] = useState("");
 
   const {
@@ -43,32 +43,24 @@ export default function ChatForm() {
     defaultValues: {
       title: "",
       publish: "show",
-      members: [],
+      groups: [],
     },
   });
 
-  // 🔵 1. Завантаження користувачів з API
+  // 🔥 LOAD GROUPS
   useEffect(() => {
-    const loadUsers = async () => {
-      const res = await apiRequest(apiUrl.users, "GET");
+    const loadGroups = async () => {
+      const res = await apiRequest(apiUrl.groups);
 
-      if (res?.users) {
-        const formatted = res.users.map((u) => ({
-          label: u.name || u.email,
-          value: u._id,
-        }));
-
-        setUsersList([
-          { label: "Všichni uživatelé", value: "ALL" },
-          ...formatted,
-        ]);
+      if (res?.status === "success") {
+        setGroupsList(res.data || []);
       }
     };
 
-    loadUsers();
+    loadGroups();
   }, []);
 
-  // 🔵 2. Завантаження даних при редагуванні
+  // 🔥 LOAD CHAT FOR EDIT
   useEffect(() => {
     if (!isEdit) return;
 
@@ -76,32 +68,25 @@ export default function ChatForm() {
       const res = await apiRequest(`${apiUrl.chat}/${id}`);
 
       if (res?.status === "success") {
-        let selected = res.data.members || [];
-        if (selected.length === 0) selected = ["ALL"];
-
         reset({
           title: res.data.title,
           publish: res.data.publish,
-          members: selected,
+          groups: res.data.groups?.map((g) => g._id) || [],
         });
-
       }
     };
 
     loadChat();
   }, [id, isEdit, reset]);
 
-  // 🔵 3. Submit
+  // 🔥 SUBMIT
   const onSubmit = async (values) => {
     setApiError("");
-
-    let selectedMembers = values.members;
-    if (selectedMembers.includes("ALL")) selectedMembers = [];
 
     const payload = {
       title: values.title.trim(),
       publish: values.publish,
-      members: selectedMembers,
+      groups: values.groups || [],
     };
 
     const url = isEdit ? `${apiUrl.chat}/${id}` : apiUrl.chat;
@@ -129,7 +114,7 @@ export default function ChatForm() {
         </Message>
       )}
 
-      {/* Název chatu */}
+      {/* TITLE */}
       <Form.Group>
         <Form.ControlLabel>Název chatu</Form.ControlLabel>
         <Controller
@@ -140,13 +125,11 @@ export default function ChatForm() {
           )}
         />
         {errors.title && (
-          <Message type="error" style={{ marginTop: 6 }}>
-            {errors.title.message}
-          </Message>
+          <Message type="error">{errors.title.message}</Message>
         )}
       </Form.Group>
 
-      {/* Zobrazení */}
+      {/* PUBLISH */}
       <Form.Group>
         <Form.ControlLabel>Zobrazení</Form.ControlLabel>
         <Controller
@@ -165,35 +148,26 @@ export default function ChatForm() {
         />
       </Form.Group>
 
-      {/* Výběr uživatelů */}
+      {/* GROUPS */}
       <Form.Group>
-        <Form.ControlLabel>Uživatelé v chatu</Form.ControlLabel>
+        <Form.ControlLabel>Skupiny</Form.ControlLabel>
         <Controller
-          name="members"
+          name="groups"
           control={control}
           render={({ field }) => (
-            <SelectPicker
-              data={usersList}
-              style={{ width: "100%" }}
-              placeholder="Vyberte uživatele"
-              onChange={(val) => {
-                if (val.includes("ALL")) {
-                  field.onChange(["ALL"]);
-                } else {
-                  field.onChange(val);
-                }
-              }}              
+            <CheckPicker
+              data={groupsList.map((g) => ({
+                label: g.name,
+                value: g._id,
+              }))}
               value={field.value}
-              searchable
-              multiple
+              onChange={field.onChange}
+              style={{ width: "100%" }}
+              placeholder="Vyberte skupiny"
+              block
             />
           )}
         />
-        {errors.members && (
-          <Message type="error" style={{ marginTop: 6 }}>
-            {errors.members.message}
-          </Message>
-        )}
       </Form.Group>
 
       <ButtonToolbar>
