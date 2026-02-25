@@ -64,16 +64,16 @@ export default function ContactsForm() {
     },
   });
 
-  // 🔥 Load groups
+  // ✅ Load groups (ВИПРАВЛЕНО)
   useEffect(() => {
     apiRequest(apiUrl.groups).then((res) => {
       if (res?.status === "success") {
-        setGroups(res.groups);
+        setGroups(res.data || []);
       }
     });
   }, []);
 
-  // 🔥 Load user for edit
+  // ✅ Load user
   useEffect(() => {
     if (!isEdit) return;
 
@@ -156,36 +156,22 @@ export default function ContactsForm() {
       </Field>
 
       <Field label="Jméno">
-        <Controller
-          name="name"
-          control={control}
-          render={({ field }) => <Input {...field} />}
-        />
+        <Controller name="name" control={control} render={({ field }) => <Input {...field} />} />
       </Field>
 
       <Field label="Telefon">
-        <Controller
-          name="phone"
-          control={control}
-          render={({ field }) => <Input {...field} />}
-        />
+        <Controller name="phone" control={control} render={({ field }) => <Input {...field} />} />
       </Field>
 
       <Field label="Klinika">
-        <Controller
-          name="clinic"
-          control={control}
-          render={({ field }) => <Input {...field} />}
-        />
+        <Controller name="clinic" control={control} render={({ field }) => <Input {...field} />} />
       </Field>
 
       <Field label="Datum narození">
         <Controller
           name="birthDate"
           control={control}
-          render={({ field }) => (
-            <Input {...field} type="date" />
-          )}
+          render={({ field }) => <Input {...field} type="date" />}
         />
       </Field>
 
@@ -214,11 +200,12 @@ export default function ContactsForm() {
           control={control}
           render={({ field }) => (
             <CheckPicker
-              {...field}
               data={groups.map((g) => ({
                 label: g.name,
                 value: g._id,
               }))}
+              value={field.value}
+              onChange={field.onChange}
               style={{ width: "100%" }}
               block
             />
