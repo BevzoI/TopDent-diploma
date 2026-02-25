@@ -1,11 +1,9 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import Group from "./models/Group.js";
+import connectDB from "./db.js";
 
 dotenv.config();
-
-// 🔥 Формуємо URI так само, як у сервері
-const uri = `mongodb+srv://${process.env.MONGO_USERNAME}:${process.env.MONGO_PASSWORD}@${process.env.MONGO_CLUSTER}/${process.env.MONGO_DB}?retryWrites=true&w=majority`;
 
 const groups = [
   "TopDent",
@@ -21,22 +19,25 @@ const groups = [
   "GP",
   "TopCare",
   "Lab4Dent",
+  "Prádelna",
 ];
 
 async function seed() {
   try {
-    await mongoose.connect(uri);
-
-    await Group.deleteMany();
+    await connectDB();
 
     for (const name of groups) {
-      await Group.create({ name });
+      const exists = await Group.findOne({ name });
+      if (!exists) {
+        await Group.create({ name });
+        console.log(`✅ Created group: ${name}`);
+      }
     }
 
-    console.log("✅ Groups seeded successfully");
+    console.log("🎉 Groups seeded successfully");
     process.exit();
-  } catch (err) {
-    console.error("❌ Seed error:", err);
+  } catch (error) {
+    console.error("❌ Seed error:", error);
     process.exit(1);
   }
 }
