@@ -21,13 +21,13 @@ export default function ChatList() {
     }
   }, [user?.notifications?.chat, clearNotification]);
 
-  // 🟦 Load all chats
+  // 🟦 Load chats
   useEffect(() => {
     const loadChats = async () => {
       const res = await apiRequest(apiUrl.chat, "GET");
 
       if (res?.status === "success") {
-        setChats(res.data);
+        setChats(res.data || []);
       } else {
         setApiError("Nepodařilo se načíst chaty.");
       }
@@ -45,7 +45,7 @@ export default function ChatList() {
     const res = await apiRequest(`${apiUrl.chat}/${id}`, "DELETE");
 
     if (res?.status === "success") {
-      setChats((prev) => prev.filter((c) => c._id !== id));
+      setChats((prev) => prev.filter((c) => c.id !== id));
     } else {
       setApiError("Nepodařilo se smazat chat.");
     }
@@ -63,47 +63,48 @@ export default function ChatList() {
 
       {loading && <p>Načítám…</p>}
 
-      {!loading && chats.length === 0 && <p>Žádné chaty nejsou k dispozici.</p>}
+      {!loading && chats.length === 0 && (
+        <p>Žádné chaty nejsou k dispozici.</p>
+      )}
 
       <FlexboxGrid justify="start" align="top" gutter={20}>
         {chats.map((chat) => (
           <FlexboxGrid.Item
-            key={chat._id}
+            key={chat.id}
             colspan={24}
             sm={12}
             md={8}
             lg={6}
           >
             <Panel bordered shaded className="chat-card">
-              {/* Chat title */}
-              <Link to={siteUrls.viewChat(chat._id)} className="chat-title">
+              <Link to={siteUrls.viewChat(chat.id)} className="chat-title">
                 {chat.title}
               </Link>
 
-              {/* INFO */}
               <div className="chat__meta">
                 <div className="chat__meta-item">
                   <div className="chat__meta-item-label">Vytvořeno:</div>
                   <div className="chat__meta-item-value">
-                    {new Date(chat.createdAt).toLocaleDateString("cs-CZ")}
+                    {chat.createdAt
+                      ? new Date(chat.createdAt).toLocaleDateString("cs-CZ")
+                      : "—"}
                   </div>
                 </div>
 
                 <div className="chat__meta-item">
-                  <div className="chat__meta-item-label">Členové:</div>
+                  <div className="chat__meta-item-label">Skupiny:</div>
                   <div className="chat__meta-item-value">
-                    {chat.members?.length === 0
+                    {chat.groups?.length === 0
                       ? "Všichni"
-                      : `${chat.members.length} uživatelů`}
+                      : chat.groups?.map((g) => g.name).join(", ")}
                   </div>
                 </div>
               </div>
 
-              {/* ADMIN ACTIONS */}
               {user?.role === "admin" && (
                 <div className="admin-actions">
                   <Link
-                    to={siteUrls.editChat(chat._id)}
+                    to={siteUrls.editChat(chat.id)}
                     className="btn btn-sm btn-green"
                   >
                     Upravit
@@ -111,7 +112,7 @@ export default function ChatList() {
 
                   <button
                     className="btn btn-sm btn-red"
-                    onClick={() => deleteChat(chat._id)}
+                    onClick={() => deleteChat(chat.id)}
                   >
                     Smazat
                   </button>
