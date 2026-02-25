@@ -1,10 +1,4 @@
 import User from "../models/User.js";
-import cloudinary from "../utils/cloudinary.js";
-
-// -------------------------
-// CREATE USER
-// -------------------------
-import User from "../models/User.js";
 import Invite from "../models/Invite.js";
 import crypto from "crypto";
 import cloudinary from "../utils/cloudinary.js";
@@ -34,7 +28,7 @@ export async function createUser(req, res) {
     const randomIndex = Math.floor(Math.random() * 100) + 1;
     const avatarPath = `AV${randomIndex}.webp`;
 
-    // 🔹 створюємо юзера БЕЗ пароля
+    // створюємо юзера БЕЗ пароля
     const newUser = await User.create({
       email,
       role: role || "user",
@@ -44,7 +38,7 @@ export async function createUser(req, res) {
       isActive: false,
     });
 
-    // 🔥 створюємо invite token
+    // створюємо invite token
     const token = crypto.randomBytes(32).toString("hex");
 
     await Invite.create({
@@ -62,7 +56,7 @@ export async function createUser(req, res) {
         email: newUser.email,
         role: newUser.role,
       },
-      inviteLink, // 🔥 ОЦЕ ТЕПЕР ПРАВИЛЬНИЙ ЛІНК
+      inviteLink,
     });
 
   } catch (error) {
@@ -165,6 +159,7 @@ export async function updateUserById(req, res) {
 
     if (password && password.trim().length > 0) {
       updateData.password = password.trim();
+      updateData.isActive = true;
     }
 
     if (Array.isArray(groups)) {
