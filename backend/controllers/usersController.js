@@ -4,13 +4,21 @@ import cloudinary from "../utils/cloudinary.js";
 // -------------------------
 // CREATE USER
 // -------------------------
-export async function createUser(req, res) {
-  const { email, password, role, phone, groups } = req.body;
+import User from "../models/User.js";
+import Invite from "../models/Invite.js";
+import crypto from "crypto";
+import cloudinary from "../utils/cloudinary.js";
 
-  if (!email || !password) {
+// -------------------------
+// CREATE USER (WITH INVITE FLOW)
+// -------------------------
+export async function createUser(req, res) {
+  const { email, role, phone, groups } = req.body;
+
+  if (!email) {
     return res.status(400).json({
       status: "error",
-      message: "Email a heslo jsou povinné.",
+      message: "Email je povinný.",
     });
   }
 
@@ -26,26 +34,37 @@ export async function createUser(req, res) {
     const randomIndex = Math.floor(Math.random() * 100) + 1;
     const avatarPath = `AV${randomIndex}.webp`;
 
+    // 🔹 створюємо юзера БЕЗ пароля
     const newUser = await User.create({
       email,
-      password,
       role: role || "user",
       phone: phone || "",
       avatar: avatarPath,
       groups: Array.isArray(groups) ? groups : [],
+      isActive: false,
     });
 
-    const populatedUser = await User.findById(newUser._id)
-      .populate("groups")
-      .lean();
+    // 🔥 створюємо invite token
+    const token = crypto.randomBytes(32).toString("hex");
+
+    await Invite.create({
+      token,
+      user: newUser._id,
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24), // 24 год
+    });
+
+    const inviteLink = `${process.env.FRONTEND_URL}/invite/${token}`;
 
     return res.json({
       status: "success",
       user: {
-        ...populatedUser,
-        id: populatedUser._id,
+        id: newUser._id,
+        email: newUser.email,
+        role: newUser.role,
       },
+      inviteLink, // 🔥 ОЦЕ ТЕПЕР ПРАВИЛЬНИЙ ЛІНК
     });
+
   } catch (error) {
     console.error("Create user error:", error);
     return res.status(500).json({
