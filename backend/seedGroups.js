@@ -5,6 +5,9 @@ import connectDB from "./db.js";
 
 dotenv.config();
 
+// 🔥 Формуємо URI так само, як у сервері
+const uri = `mongodb+srv://${process.env.MONGO_USERNAME}:${process.env.MONGO_PASSWORD}@${process.env.MONGO_CLUSTER}/${process.env.MONGO_DB}?retryWrites=true&w=majority`;
+
 const groups = [
   "TopDent",
   "Bakov nad Jizerou",
@@ -24,20 +27,18 @@ const groups = [
 
 async function seed() {
   try {
-    await connectDB();
+    await mongoose.connect(uri);
+
+    await Group.deleteMany();
 
     for (const name of groups) {
-      const exists = await Group.findOne({ name });
-      if (!exists) {
-        await Group.create({ name });
-        console.log(`✅ Created group: ${name}`);
-      }
+      await Group.create({ name });
     }
 
-    console.log("🎉 Groups seeded successfully");
+    console.log("✅ Groups seeded successfully");
     process.exit();
-  } catch (error) {
-    console.error("❌ Seed error:", error);
+  } catch (err) {
+    console.error("❌ Seed error:", err);
     process.exit(1);
   }
 }
