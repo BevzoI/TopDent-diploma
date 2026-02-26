@@ -10,12 +10,12 @@ export default function AppInit({ children }) {
   }
 
   const publicRoutes = [
+    "/",
     "/goodbye-user",
   ];
 
   const isInviteRoute = location.pathname.startsWith("/invite");
 
-  // ✅ дозволяємо public маршрути
   if (!user && !publicRoutes.includes(location.pathname) && !isInviteRoute) {
     return <div>Access denied!</div>;
   }
