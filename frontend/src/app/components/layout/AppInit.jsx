@@ -11,6 +11,7 @@ export default function AppInit({ children }) {
 
   const publicRoutes = [
     "/",
+    "/login",
     "/goodbye-user",
   ];
 

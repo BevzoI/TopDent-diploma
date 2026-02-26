@@ -6,9 +6,11 @@ import AppInit from "./components/layout/AppInit";
 import AuthContext from "./context/AuthContext";
 import ComingSoonPage from "./pages/ComingSoonPage";
 
-// 🔥 ДОДАЛИ
+// 🔥 PUBLIC PAGES
 const InvitePage = lazy(() => import("./pages/InvitePage"));
+const LoginPage = lazy(() => import("./pages/LoginPage"));
 
+// 🔒 PRIVATE PAGES
 const Home = lazy(() => import("./pages/Home"));
 const ErrorPage = lazy(() => import("./pages/ErrorPage"));
 const Weekend = lazy(() => import("./pages/weekend/Weekend"));
@@ -34,10 +36,11 @@ function AppRoutes() {
   return (
     <Routes>
 
-      {/* 🔥 INVITE ROUTE БЕЗ LAYOUT */}
+      {/* 🔥 PUBLIC ROUTES (без Layout) */}
       <Route path="/invite/:token" element={<InvitePage />} />
+      <Route path="/login" element={<LoginPage />} />
 
-      {/* 🔒 ВСЕ ІНШЕ ЧЕРЕЗ LAYOUT */}
+      {/* 🔒 PRIVATE ROUTES (через Layout) */}
       <Route path="/" element={<Layout />}>
         <Route index element={<Home />} />
 
