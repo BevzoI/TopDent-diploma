@@ -1,7 +1,9 @@
 import User from "../models/User.js";
 import Invite from "../models/Invite.js";
 import crypto from "crypto";
+import bcrypt from "bcryptjs";
 import cloudinary from "../utils/cloudinary.js";
+import { sendInviteEmail } from "../utils/sendEmail.js";
 
 // -------------------------
 // CREATE USER (WITH INVITE FLOW)
@@ -28,7 +30,7 @@ export async function createUser(req, res) {
     const randomIndex = Math.floor(Math.random() * 100) + 1;
     const avatarPath = `AV${randomIndex}.webp`;
 
-    // створюємо юзера БЕЗ пароля
+    // Створюємо юзера без пароля
     const newUser = await User.create({
       email,
       role: role || "user",
@@ -38,16 +40,19 @@ export async function createUser(req, res) {
       isActive: false,
     });
 
-    // створюємо invite token
+    // Генеруємо invite token
     const token = crypto.randomBytes(32).toString("hex");
 
     await Invite.create({
       token,
       user: newUser._id,
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24), // 24 год
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24), // 24h
     });
 
     const inviteLink = `${process.env.FRONTEND_URL}/invite/${token}`;
+
+    // 🔥 ВІДПРАВКА EMAIL
+    await sendInviteEmail(email, inviteLink);
 
     return res.json({
       status: "success",
@@ -56,7 +61,6 @@ export async function createUser(req, res) {
         email: newUser.email,
         role: newUser.role,
       },
-      inviteLink,
     });
 
   } catch (error) {
@@ -157,8 +161,10 @@ export async function updateUserById(req, res) {
     if (birthDate !== undefined) updateData.birthDate = birthDate || null;
     if (role) updateData.role = role;
 
+    // 🔐 Хешуємо пароль
     if (password && password.trim().length > 0) {
-      updateData.password = password.trim();
+      const hashed = await bcrypt.hash(password.trim(), 10);
+      updateData.password = hashed;
       updateData.isActive = true;
     }
 
@@ -199,6 +205,7 @@ export async function updateUserById(req, res) {
         id: updatedUser._id,
       },
     });
+
   } catch (error) {
     console.error("Update user error:", error);
     return res.status(500).json({
@@ -256,6 +263,7 @@ export async function getUserNotifications(req, res) {
         weekend: user.newWeekend,
       },
     });
+
   } catch (error) {
     console.error("Notifications error:", error);
     return res.status(500).json({
