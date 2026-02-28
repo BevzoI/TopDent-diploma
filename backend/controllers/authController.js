@@ -47,6 +47,7 @@ export async function login(req, res) {
         name: user.name,
       },
     });
+
   } catch (error) {
     console.error("Login error:", error);
     return res.status(500).json({
@@ -73,7 +74,9 @@ export async function checkInvite(req, res) {
     }
 
     return res.json({ status: "success" });
+
   } catch (error) {
+    console.error("Check invite error:", error);
     return res.status(500).json({ status: "error" });
   }
 }
@@ -110,6 +113,7 @@ export async function setPassword(req, res) {
     invite.used = true;
     await invite.save();
 
+    // 🔥 Генеруємо JWT для автологіну
     const jwtToken = generateToken(invite.user);
 
     return res.json({
@@ -122,8 +126,12 @@ export async function setPassword(req, res) {
         name: invite.user.name,
       },
     });
+
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ status: "error" });
+    console.error("Set password error:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Chyba serveru.",
+    });
   }
 }
