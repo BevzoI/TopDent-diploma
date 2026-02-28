@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const AuthContextData = createContext();
 
@@ -13,6 +14,8 @@ function parseJwt(token) {
 }
 
 export default function AuthContext({ children }) {
+  const navigate = useNavigate();
+
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -43,11 +46,11 @@ export default function AuthContext({ children }) {
     setUser(userData);
   };
 
-  // 🔹 Logout
+  // 🔹 Logout (mobile-safe)
   const logout = () => {
     localStorage.removeItem("token");
     setUser(null);
-    window.location.href = "/goodbye-user";
+    navigate("/goodbye-user");
   };
 
   return (
