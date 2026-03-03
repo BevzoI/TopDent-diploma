@@ -95,7 +95,7 @@ export async function setPassword(req, res) {
   }
 
   try {
-    const invite = await Invite.findOne({ token }).populate("user");
+    const invite = await Invite.findOne({ token });
 
     if (!invite || invite.used || invite.expiresAt < new Date()) {
       return res.status(400).json({
@@ -104,26 +104,34 @@ export async function setPassword(req, res) {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.findById(invite.user).select("+password");
 
-    invite.user.password = hashedPassword;
-    invite.user.isActive = true;
-    await invite.user.save();
+    if (!user) {
+      return res.status(404).json({
+        status: "error",
+        message: "Uživatel nenalezen.",
+      });
+    }
+
+    // schema pre("save") автоматично захешує пароль
+    user.password = password;
+    user.isActive = true;
+
+    await user.save();
 
     invite.used = true;
     await invite.save();
 
-    // 🔥 Генеруємо JWT для автологіну
-    const jwtToken = generateToken(invite.user);
+    const jwtToken = generateToken(user);
 
     return res.json({
       status: "success",
       token: jwtToken,
       user: {
-        id: invite.user._id,
-        email: invite.user.email,
-        role: invite.user.role,
-        name: invite.user.name,
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        name: user.name,
       },
     });
 
