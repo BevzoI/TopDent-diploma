@@ -4,7 +4,7 @@ import { login, checkInvite, setPassword } from "../controllers/authController.j
 const router = express.Router();
 
 // 🔐 LOGIN
-router.post("/", login);
+router.post("/login", login);
 
 // 🔍 CHECK INVITE
 router.get("/invite/:token", checkInvite);
