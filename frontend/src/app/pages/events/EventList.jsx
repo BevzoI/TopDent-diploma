@@ -17,18 +17,18 @@ export default function EventList() {
 
   // 🔔 Clear notification badge
   useEffect(() => {
-    if (user?.notifications?.events) {
+    if (user?.notifications?.events && clearNotification) {
       clearNotification("events");
     }
   }, [user?.notifications?.events, clearNotification]);
 
-  // 📦 Load events (once)
+  // 📦 Load events
   useEffect(() => {
     const loadEvents = async () => {
       const res = await apiRequest(apiUrl.events, "GET");
 
       if (res?.status === "success") {
-        setEvents(res.data);
+        setEvents(res.data || []);
       }
 
       setLoading(false);
@@ -39,7 +39,9 @@ export default function EventList() {
 
   // 🗑 Delete event
   const deleteEvent = async (id) => {
-    const confirmDelete = window.confirm("Opravdu chcete smazat tuto událost?");
+    const confirmDelete = window.confirm(
+      "Opravdu chcete smazat tuto událost?"
+    );
     if (!confirmDelete) return;
 
     const res = await apiRequest(`${apiUrl.events}/${id}`, "DELETE");
@@ -67,7 +69,8 @@ export default function EventList() {
             <Card key={event._id} shaded className="mb-20">
               <Card.Header>
                 <Heading level={5} size="md">
-                  <Link to={siteUrls.viewEventChoice(event._id)}>
+                  {/* 🔥 ВИПРАВЛЕНО ТУТ */}
+                  <Link to={siteUrls.eventAnswers(event._id)}>
                     {event.title}
                   </Link>
                 </Heading>
@@ -86,7 +89,9 @@ export default function EventList() {
                   </Text>
                 )}
 
-                <Text muted>🕒 {formatDateTime(event.dateTime)}</Text>
+                <Text muted>
+                  🕒 {formatDateTime(event.dateTime)}
+                </Text>
               </Card.Body>
 
               <Card.Footer>
@@ -126,7 +131,9 @@ export default function EventList() {
                         : "admin-status-hidden"
                     }`}
                   >
-                    {event.publish === "show" ? "Zobrazeno" : "Skryto"}
+                    {event.publish === "show"
+                      ? "Zobrazeno"
+                      : "Skryto"}
                   </p>
                 </div>
               )}
@@ -134,7 +141,9 @@ export default function EventList() {
           ))}
       </div>
 
-      {user?.role === "admin" && <ButtonAdd link={siteUrls.addEvent} />}
+      {user?.role === "admin" && (
+        <ButtonAdd link={siteUrls.addEvent} />
+      )}
     </>
   );
 }
