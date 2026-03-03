@@ -26,6 +26,13 @@ export async function login(req, res) {
       });
     }
 
+    if (!user.password) {
+      return res.status(401).json({
+        status: "error",
+        message: "Účet není aktivovaný.",
+      });
+    }
+
     const passwordMatch = await bcrypt.compare(password, user.password);
 
     if (!passwordMatch) {
@@ -104,7 +111,7 @@ export async function setPassword(req, res) {
       });
     }
 
-    const user = await User.findById(invite.user).select("+password");
+    const user = await User.findById(invite.user);
 
     if (!user) {
       return res.status(404).json({
@@ -113,7 +120,8 @@ export async function setPassword(req, res) {
       });
     }
 
-    // schema pre("save") автоматично захешує пароль
+    // 🔐 Просто встановлюємо пароль
+    // mongoose pre("save") автоматично його захешує
     user.password = password;
     user.isActive = true;
 
