@@ -1,5 +1,4 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 const AuthContextData = createContext();
 
@@ -14,12 +13,10 @@ function parseJwt(token) {
 }
 
 export default function AuthContext({ children }) {
-  const navigate = useNavigate();
-
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // 🔹 Init from JWT
+  // 🔹 INIT (automatic login)
   useEffect(() => {
     const token = localStorage.getItem("token");
 
@@ -40,24 +37,25 @@ export default function AuthContext({ children }) {
     setLoading(false);
   }, []);
 
-  // 🔹 Login
-  const login = (token, userData) => {
+  // 🔹 LOGIN
+  const login = (token) => {
     localStorage.setItem("token", token);
-    setUser(userData);
+
+    const decoded = parseJwt(token);
+    setUser(decoded);
   };
 
-  // 🔹 Logout (mobile-safe)
+  // 🔹 LOGOUT
   const logout = () => {
     localStorage.removeItem("token");
     setUser(null);
-    navigate("/goodbye-user");
+    window.location.href = "/goodbye-user";
   };
 
   return (
     <AuthContextData.Provider
       value={{
         user,
-        setUser,
         login,
         logout,
         loading,
