@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
 const userSchema = new mongoose.Schema(
   {
@@ -10,7 +11,6 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
     },
 
-    // 🔐 Пароль зʼявляється ПІСЛЯ invite
     password: {
       type: String,
       required: false,
@@ -50,7 +50,6 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
-    // 🏥 GROUPS (може бути необмежена кількість)
     groups: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -58,7 +57,6 @@ const userSchema = new mongoose.Schema(
       },
     ],
 
-    // 🔔 Notifications
     newChat: { type: Boolean, default: false },
     newNews: { type: Boolean, default: false },
     newPoll: { type: Boolean, default: false },
@@ -66,22 +64,33 @@ const userSchema = new mongoose.Schema(
     newEvent: { type: Boolean, default: false },
     newWeekend: { type: Boolean, default: false },
 
-    // ✅ Акаунт активний тільки після створення пароля
     isActive: {
       type: Boolean,
       default: false,
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
 /**
- * 🔍 Перевірка: чи активований акаунт
+ * 🔐 AUTO HASH PASSWORD
  */
-userSchema.methods.isActivated = function () {
-  return this.isActive && !!this.password;
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+
+  if (!this.password) return next();
+
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+
+  next();
+});
+
+/**
+ * 🔐 PASSWORD CHECK METHOD
+ */
+userSchema.methods.comparePassword = async function (candidatePassword) {
+  return bcrypt.compare(candidatePassword, this.password);
 };
 
 const User = mongoose.model("User", userSchema);
