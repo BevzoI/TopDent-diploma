@@ -8,13 +8,53 @@ import {
   sendMessage,
 } from "../controllers/chatController.js";
 
+import authMiddleware from "../middleware/authMiddleware.js";
+import { adminOnly } from "../middleware/roleMiddleware.js";
+import upload from "../middleware/uploadMiddleware.js";
+
 const router = express.Router();
 
-router.get("/", getChats);
-router.get("/:id", getChatById);
-router.post("/", createChat);
-router.patch("/:id", updateChat);
-router.delete("/:id", deleteChat);
-router.post("/:id/message", sendMessage);
+/* =====================================================
+   GET – pouze přihlášení uživatelé
+===================================================== */
+
+router.get("/", authMiddleware, getChats);
+router.get("/:id", authMiddleware, getChatById);
+
+/* =====================================================
+   ADMIN – vytváření a úpravy
+===================================================== */
+
+router.post(
+  "/",
+  authMiddleware,
+  adminOnly,
+  createChat
+);
+
+router.patch(
+  "/:id",
+  authMiddleware,
+  adminOnly,
+  updateChat
+);
+
+router.delete(
+  "/:id",
+  authMiddleware,
+  adminOnly,
+  deleteChat
+);
+
+/* =====================================================
+   SEND MESSAGE + FILES
+===================================================== */
+
+router.post(
+  "/:id/message",
+  authMiddleware,
+  upload.array("files"),   // 🔥 důležité pro Cloudinary
+  sendMessage
+);
 
 export default router;

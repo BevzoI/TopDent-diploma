@@ -1,186 +1,272 @@
 import Chat from "../models/Chat.js";
 import User from "../models/User.js";
+import cloudinary from "../utils/cloudinary.js";
 
-// 🔐 Helper – перевірка доступу
-async function checkAccess(chat, user) {
-  if (!chat.groups || chat.groups.length === 0) return true;
+/* =====================================================
+   HELPER – kontrola přístupu
+===================================================== */
 
-  const userGroups = user.groups.map((g) => g.toString());
+function hasAccess(chat, user) {
+  if (user.role === "admin") return true;
 
-  return chat.groups.some((g) =>
-    userGroups.includes(g.toString())
-  );
+  if (chat.visibility === "all") return true;
+
+  if (
+    chat.visibility === "users" &&
+    chat.specificUsers.some(
+      (id) => id.toString() === user._id.toString()
+    )
+  ) {
+    return true;
+  }
+
+  if (
+    chat.visibility === "groups" &&
+    chat.specificGroups.some((groupId) =>
+      user.groups.some(
+        (userGroup) =>
+          userGroup.toString() === groupId.toString()
+      )
+    )
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
-// -------------------------
-// GET ALL CHATS (по групах)
-// -------------------------
+/* =====================================================
+   GET ALL CHATS
+===================================================== */
+
 export async function getChats(req, res) {
   try {
-    const userId = req.headers["x-user-id"];
+    const user = req.user;
 
-    const user = await User.findById(userId);
+    let query = {};
 
-    if (!user) return res.status(404).json({ status: "error" });
+    if (user.role !== "admin") {
+      query = {
+        publish: "show",
+        $or: [
+          { visibility: "all" },
+          { visibility: "users", specificUsers: user._id },
+          {
+            visibility: "groups",
+            specificGroups: { $in: user.groups || [] },
+          },
+        ],
+      };
+    }
 
-    const chats = await Chat.find({
-      $or: [
-        { groups: { $size: 0 } },
-        { groups: { $in: user.groups } },
-      ],
-    })
-      .populate("groups")
-      .lean();
+    const chats = await Chat.find(query)
+      .populate("author", "name email")
+      .sort({ createdAt: -1 });
 
     return res.json({
       status: "success",
-      data: chats.map((c) => ({ ...c, id: c._id })),
+      data: chats,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Chyba při načítání chatů:", error);
     return res.status(500).json({ status: "error" });
   }
 }
 
-// -------------------------
-// GET SINGLE CHAT
-// -------------------------
+/* =====================================================
+   GET SINGLE CHAT
+===================================================== */
+
 export async function getChatById(req, res) {
   try {
-    const { id } = req.params;
-    const userId = req.headers["x-user-id"];
+    const user = req.user;
 
-    const user = await User.findById(userId);
-    const chat = await Chat.findById(id)
-      .populate("groups")
-      .populate("messages.sender")
-      .lean();
+    const chat = await Chat.findById(req.params.id)
+      .populate("author", "name email")
+      .populate("messages.sender", "name email");
 
     if (!chat) {
       return res.status(404).json({ status: "error" });
     }
 
-    const allowed = await checkAccess(chat, user);
-
-    if (!allowed) {
-      return res.status(403).json({ status: "error" });
+    if (!hasAccess(chat, user)) {
+      return res.status(403).json({
+        status: "error",
+        message: "Nemáte přístup k tomuto chatu",
+      });
     }
 
     return res.json({
       status: "success",
-      data: { ...chat, id: chat._id },
+      data: chat,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Chyba při načítání chatu:", error);
     return res.status(500).json({ status: "error" });
   }
 }
 
-// -------------------------
-// CREATE CHAT
-// -------------------------
+/* =====================================================
+   CREATE CHAT
+===================================================== */
+
 export async function createChat(req, res) {
   try {
-    const { title, publish, groups } = req.body;
+    const user = req.user;
 
-    const newChat = await Chat.create({
+    const {
       title,
       publish,
-      groups: Array.isArray(groups) ? groups : [],
+      visibility,
+      specificUsers,
+      specificGroups,
+    } = req.body;
+
+    const chat = await Chat.create({
+      title,
+      publish,
+      visibility,
+      specificUsers: specificUsers
+        ? JSON.parse(specificUsers)
+        : [],
+      specificGroups: specificGroups
+        ? JSON.parse(specificGroups)
+        : [],
+      author: user._id,
       messages: [],
     });
 
-    const populated = await Chat.findById(newChat._id)
-      .populate("groups")
-      .lean();
-
     return res.json({
       status: "success",
-      data: { ...populated, id: populated._id },
+      data: chat,
     });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ status: "error" });
+    console.error("Chyba při vytváření chatu:", error);
+    return res.status(400).json({ status: "error" });
   }
 }
 
-// -------------------------
-// UPDATE CHAT
-// -------------------------
+/* =====================================================
+   UPDATE CHAT
+===================================================== */
+
 export async function updateChat(req, res) {
   try {
-    const { id } = req.params;
-    const { title, publish, groups } = req.body;
+    const {
+      title,
+      publish,
+      visibility,
+      specificUsers,
+      specificGroups,
+    } = req.body;
 
     const updated = await Chat.findByIdAndUpdate(
-      id,
+      req.params.id,
       {
         title,
         publish,
-        groups: Array.isArray(groups) ? groups : [],
+        visibility,
+        specificUsers: specificUsers
+          ? JSON.parse(specificUsers)
+          : [],
+        specificGroups: specificGroups
+          ? JSON.parse(specificGroups)
+          : [],
       },
       { new: true }
-    )
-      .populate("groups")
-      .lean();
+    );
 
     return res.json({
       status: "success",
-      data: { ...updated, id: updated._id },
+      data: updated,
     });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ status: "error" });
+    console.error("Chyba při úpravě chatu:", error);
+    return res.status(400).json({ status: "error" });
   }
 }
 
-// -------------------------
-// DELETE CHAT
-// -------------------------
+/* =====================================================
+   DELETE CHAT
+===================================================== */
+
 export async function deleteChat(req, res) {
   try {
-    const { id } = req.params;
-    await Chat.findByIdAndDelete(id);
+    await Chat.findByIdAndDelete(req.params.id);
     return res.json({ status: "success" });
   } catch (error) {
     return res.status(500).json({ status: "error" });
   }
 }
 
-// -------------------------
-// SEND MESSAGE
-// -------------------------
+/* =====================================================
+   SEND MESSAGE + FILE UPLOAD
+===================================================== */
+
 export async function sendMessage(req, res) {
   try {
-    const { id } = req.params;
+    const user = req.user;
     const { content } = req.body;
-    const sender = req.headers["x-user-id"];
 
-    const user = await User.findById(sender);
-    const chat = await Chat.findById(id);
+    const chat = await Chat.findById(req.params.id);
 
-    if (!chat) return res.status(404).json({ status: "error" });
+    if (!chat) {
+      return res.status(404).json({ status: "error" });
+    }
 
-    const allowed = await checkAccess(chat, user);
-    if (!allowed) return res.status(403).json({ status: "error" });
+    if (!hasAccess(chat, user)) {
+      return res.status(403).json({ status: "error" });
+    }
+
+    let uploadedFiles = [];
+
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const uploadResult = await new Promise(
+          (resolve, reject) => {
+            const stream =
+              cloudinary.uploader.upload_stream(
+                {
+                  resource_type: "auto",
+                  folder: "chat",
+                },
+                (error, result) => {
+                  if (error) reject(error);
+                  else resolve(result);
+                }
+              );
+            stream.end(file.buffer);
+          }
+        );
+
+        uploadedFiles.push({
+          url: uploadResult.secure_url,
+          name: file.originalname,
+          type:
+            uploadResult.resource_type === "image"
+              ? "image"
+              : "file",
+        });
+      }
+    }
 
     chat.messages.push({
       content,
-      sender,
+      sender: user._id,
+      attachments: uploadedFiles,
     });
 
     await chat.save();
 
-    const updated = await Chat.findById(id)
-      .populate("messages.sender")
-      .lean();
+    const updated = await Chat.findById(chat._id)
+      .populate("messages.sender", "name email");
 
     return res.json({
       status: "success",
-      data: { ...updated, id: updated._id },
+      data: updated,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Chyba při odesílání zprávy:", error);
     return res.status(500).json({ status: "error" });
   }
 }

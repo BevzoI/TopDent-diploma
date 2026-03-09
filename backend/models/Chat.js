@@ -4,7 +4,6 @@ const messageSchema = new mongoose.Schema(
   {
     content: {
       type: String,
-      required: true,
       trim: true,
     },
     sender: {
@@ -12,6 +11,13 @@ const messageSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    attachments: [
+      {
+        url: String,
+        name: String,
+        type: String,
+      },
+    ],
   },
   { timestamps: true }
 );
@@ -23,17 +29,38 @@ const chatSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+
     publish: {
       type: String,
       enum: ["show", "hide"],
       default: "show",
     },
-    groups: [
+
+    visibility: {
+      type: String,
+      enum: ["all", "users", "groups"],
+      default: "all",
+    },
+
+    specificUsers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+
+    specificGroups: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Group",
       },
     ],
+
+    author: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+
     messages: [messageSchema],
   },
   { timestamps: true }
