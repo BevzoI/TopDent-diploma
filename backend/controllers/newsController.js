@@ -1,23 +1,43 @@
 import News from "../models/News.js";
 import User from "../models/User.js";
+import cloudinary from "../utils/cloudinary.js";
 
-// GET all
+/* =====================================================
+   GET ALL (з visibility)
+===================================================== */
+
 export const getAllNews = async (req, res) => {
   try {
-    const role = req.headers["x-user-role"] || "user";
+    const user = req.user;
 
-    // 👇 якщо звичайний користувач → тільки publish: "show"
-    const query = role === "admin" ? {} : { publish: "show" };
+    let query = { publish: "show" };
 
-    const items = await News.find(query).sort({ createdAt: -1 });
+    if (user.role === "admin") {
+      query = {};
+    } else {
+      query = {
+        publish: "show",
+        $or: [
+          { visibility: "all" },
+          { visibility: "users", specificUsers: user._id },
+          { visibility: "groups", specificGroups: { $in: user.groups } },
+        ],
+      };
+    }
 
-    await User.findByIdAndUpdate(req.headers["x-user-id"], { newNews: false });
+    const items = await News.find(query)
+      .populate("author", "name email")
+      .sort({ createdAt: -1 });
+
+    await User.findByIdAndUpdate(user._id, { newNews: false });
 
     return res.json({
       status: "success",
       data: items,
     });
+
   } catch (error) {
+    console.error(error);
     return res.status(500).json({
       status: "error",
       message: "Не вдалося отримати новини",
@@ -25,10 +45,15 @@ export const getAllNews = async (req, res) => {
   }
 };
 
-// GET one
+
+/* =====================================================
+   GET ONE
+===================================================== */
+
 export const getOneNews = async (req, res) => {
   try {
-    const item = await News.findById(req.params.id);
+    const item = await News.findById(req.params.id)
+      .populate("author", "name email");
 
     if (!item) {
       return res.status(404).json({
@@ -41,6 +66,7 @@ export const getOneNews = async (req, res) => {
       status: "success",
       data: item,
     });
+
   } catch (error) {
     return res.status(400).json({
       status: "error",
@@ -49,10 +75,60 @@ export const getOneNews = async (req, res) => {
   }
 };
 
-// POST create
+
+/* =====================================================
+   CREATE (з Cloudinary upload)
+===================================================== */
+
 export const createNews = async (req, res) => {
   try {
-    const item = await News.create(req.body);
+    const user = req.user;
+
+    const {
+      title,
+      text,
+      publish,
+      visibility,
+      specificUsers,
+      specificGroups,
+    } = req.body;
+
+    let uploadedFiles = [];
+
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const uploadResult = await new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            {
+              resource_type: "auto",
+              folder: "news",
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+          stream.end(file.buffer);
+        });
+
+        uploadedFiles.push({
+          url: uploadResult.secure_url,
+          name: file.originalname,
+          type: uploadResult.resource_type === "image" ? "image" : "file",
+        });
+      }
+    }
+
+    const item = await News.create({
+      title,
+      text,
+      publish,
+      visibility,
+      specificUsers: specificUsers ? JSON.parse(specificUsers) : [],
+      specificGroups: specificGroups ? JSON.parse(specificGroups) : [],
+      attachments: uploadedFiles,
+      author: user._id,
+    });
 
     await User.updateMany({}, { $set: { newNews: true } });
 
@@ -60,7 +136,9 @@ export const createNews = async (req, res) => {
       status: "success",
       data: item,
     });
+
   } catch (error) {
+    console.error("Create news error:", error);
     return res.status(400).json({
       status: "error",
       message: "Не вдалося створити новину",
@@ -68,13 +146,66 @@ export const createNews = async (req, res) => {
   }
 };
 
-// PATCH update
+
+/* =====================================================
+   UPDATE (з можливістю додати файли)
+===================================================== */
+
 export const updateNews = async (req, res) => {
   try {
-    const item = await News.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
+    const {
+      title,
+      text,
+      publish,
+      visibility,
+      specificUsers,
+      specificGroups,
+    } = req.body;
+
+    let uploadedFiles = [];
+
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const uploadResult = await new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            {
+              resource_type: "auto",
+              folder: "news",
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+          stream.end(file.buffer);
+        });
+
+        uploadedFiles.push({
+          url: uploadResult.secure_url,
+          name: file.originalname,
+          type: uploadResult.resource_type === "image" ? "image" : "file",
+        });
+      }
+    }
+
+    const updateData = {
+      title,
+      text,
+      publish,
+      visibility,
+      specificUsers: specificUsers ? JSON.parse(specificUsers) : [],
+      specificGroups: specificGroups ? JSON.parse(specificGroups) : [],
+    };
+
+    if (uploadedFiles.length > 0) {
+      updateData.$push = { attachments: { $each: uploadedFiles } };
+    }
+
+    const item = await News.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true, runValidators: true }
+    );
 
     if (!item) {
       return res.status(404).json({
@@ -87,7 +218,9 @@ export const updateNews = async (req, res) => {
       status: "success",
       data: item,
     });
+
   } catch (error) {
+    console.error("Update news error:", error);
     return res.status(400).json({
       status: "error",
       message: "Не вдалося оновити новину",
@@ -95,7 +228,11 @@ export const updateNews = async (req, res) => {
   }
 };
 
-// DELETE remove
+
+/* =====================================================
+   DELETE
+===================================================== */
+
 export const deleteNews = async (req, res) => {
   try {
     const deleted = await News.findByIdAndDelete(req.params.id);
@@ -111,6 +248,7 @@ export const deleteNews = async (req, res) => {
       status: "success",
       data: { message: "Новину видалено" },
     });
+
   } catch (error) {
     return res.status(400).json({
       status: "error",

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ButtonToolbar,
@@ -7,6 +7,8 @@ import {
   Input,
   SelectPicker,
   Textarea,
+  CheckPicker,
+  Uploader,
 } from "rsuite";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -18,20 +20,17 @@ import { apiRequest, apiUrl } from "../../utils/apiData";
 import { PageHeader } from "../../components/ui";
 import { siteUrls } from "../../utils/siteUrls";
 
-// схема валідації
+const visibilityOptions = [
+  { label: "Pro všechny", value: "all" },
+  { label: "Konkrétní uživatelé", value: "users" },
+  { label: "Konkrétní skupiny", value: "groups" },
+];
+
 const schema = yup.object({
-  title: yup
-    .string()
-    .required("Název je povinný")
-    .min(3, "Název musí mít alespoň 3 znaky"),
-  text: yup
-    .string()
-    .required("Text je povinný")
-    .min(10, "Text musí mít alespoň 10 znaků"),
-  publish: yup
-    .string()
-    .oneOf(["show", "hide"], "Neplatná hodnota")
-    .required("Zobrazení je povinné"),
+  title: yup.string().required().min(3),
+  text: yup.string().required().min(10),
+  publish: yup.string().required(),
+  visibility: yup.string().required(),
 });
 
 export default function NewsForm() {
@@ -39,9 +38,14 @@ export default function NewsForm() {
   const isEdit = Boolean(id);
   const navigate = useNavigate();
 
+  const [usersOptions, setUsersOptions] = useState([]);
+  const [groupsOptions, setGroupsOptions] = useState([]);
+  const [attachments, setAttachments] = useState([]);
+
   const {
     control,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
     reset,
   } = useForm({
@@ -50,21 +54,56 @@ export default function NewsForm() {
       title: "",
       text: "",
       publish: "hide",
+      visibility: "all",
+      specificUsers: [],
+      specificGroups: [],
     },
   });
 
+  const visibility = watch("visibility");
+
+  // 🔹 Load users + groups
+  useEffect(() => {
+    const loadData = async () => {
+      const usersRes = await apiRequest(apiUrl.users);
+      const groupsRes = await apiRequest(apiUrl.groups);
+
+      if (usersRes?.status === "success") {
+        setUsersOptions(
+          usersRes.users.map((u) => ({
+            label: u.name || u.email,
+            value: u._id,
+          }))
+        );
+      }
+
+      if (groupsRes?.status === "success") {
+        setGroupsOptions(
+          groupsRes.data.map((g) => ({
+            label: g.name,
+            value: g._id,
+          }))
+        );
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // 🔹 Load edit data
   useEffect(() => {
     if (!isEdit) return;
 
     const loadNews = async () => {
       const res = await apiRequest(`${apiUrl.news}/${id}`);
 
-      if (res?.status === "success" && res.data) {
+      if (res?.status === "success") {
         reset({
-          title: res.data.title || "",
-          text: res.data.text || "",
-          publish: res.data.publish || "hide",
+          ...res.data,
+          specificUsers: res.data.specificUsers || [],
+          specificGroups: res.data.specificGroups || [],
         });
+        setAttachments(res.data.attachments || []);
       }
     };
 
@@ -73,9 +112,8 @@ export default function NewsForm() {
 
   const onSubmit = async (values) => {
     const payload = {
-      title: values.title.trim(),
-      text: values.text.trim(),
-      publish: values.publish,
+      ...values,
+      attachments,
     };
 
     const url = isEdit ? `${apiUrl.news}/${id}` : apiUrl.news;
@@ -83,11 +121,9 @@ export default function NewsForm() {
 
     const res = await apiRequest(url, method, payload);
 
-    if (!res || res.status !== "success") {
-      return;
+    if (res?.status === "success") {
+      navigate(siteUrls.news);
     }
-
-    navigate(siteUrls.news);
   };
 
   return (
@@ -98,22 +134,14 @@ export default function NewsForm() {
         className="mb-20"
       />
 
-      {/* Název */}
+      {/* Title */}
       <Field label="Název">
         <Controller
           name="title"
           control={control}
-          render={({ field }) => (
-            <>
-              <Input {...field} placeholder="Zadejte název..." />
-              {errors.title && (
-                <Message type="error" size="xs" style={{ marginTop: 8 }}>
-                  {errors.title.message}
-                </Message>
-              )}
-            </>
-          )}
+          render={({ field }) => <Input {...field} />}
         />
+        {errors.title && <Message type="error">{errors.title.message}</Message>}
       </Field>
 
       {/* Text */}
@@ -121,45 +149,97 @@ export default function NewsForm() {
         <Controller
           name="text"
           control={control}
-          render={({ field }) => (
-            <>
-              <Textarea
-                {...field}
-                rows={5}
-                placeholder="Zadejte text zprávy..."
-              />
-              {errors.text && (
-                <Message type="error" size="xs" style={{ marginTop: 8 }}>
-                  {errors.text.message}
-                </Message>
-              )}
-            </>
-          )}
+          render={({ field }) => <Textarea {...field} rows={5} />}
         />
+        {errors.text && <Message type="error">{errors.text.message}</Message>}
       </Field>
 
-      {/* Zobrazení */}
+      {/* Publish */}
       <Field label="Zobrazení">
         <Controller
           name="publish"
           control={control}
           render={({ field }) => (
-            <>
-              <SelectPicker
-                data={publishOptions}
-                searchable={false}
-                style={{ width: "100%" }}
-                cleanable={false}
-                value={field.value}
-                onChange={(value) => field.onChange(value)}
-              />
-              {errors.publish && (
-                <Message type="error" size="xs" style={{ marginTop: 8 }}>
-                  {errors.publish.message}
-                </Message>
-              )}
-            </>
+            <SelectPicker
+              data={publishOptions}
+              value={field.value}
+              onChange={field.onChange}
+              cleanable={false}
+              style={{ width: "100%" }}
+            />
           )}
+        />
+      </Field>
+
+      {/* Visibility */}
+      <Field label="Pro koho">
+        <Controller
+          name="visibility"
+          control={control}
+          render={({ field }) => (
+            <SelectPicker
+              data={visibilityOptions}
+              value={field.value}
+              onChange={field.onChange}
+              cleanable={false}
+              style={{ width: "100%" }}
+            />
+          )}
+        />
+      </Field>
+
+      {/* Users */}
+      {visibility === "users" && (
+        <Field label="Vyberte uživatele">
+          <Controller
+            name="specificUsers"
+            control={control}
+            render={({ field }) => (
+              <CheckPicker
+                data={usersOptions}
+                value={field.value}
+                onChange={field.onChange}
+                style={{ width: "100%" }}
+              />
+            )}
+          />
+        </Field>
+      )}
+
+      {/* Groups */}
+      {visibility === "groups" && (
+        <Field label="Vyberte skupiny">
+          <Controller
+            name="specificGroups"
+            control={control}
+            render={({ field }) => (
+              <CheckPicker
+                data={groupsOptions}
+                value={field.value}
+                onChange={field.onChange}
+                style={{ width: "100%" }}
+              />
+            )}
+          />
+        </Field>
+      )}
+
+      {/* Attachments */}
+      <Field label="Přílohy">
+        <Uploader
+          multiple
+          autoUpload={false}
+          onChange={(files) =>
+            setAttachments(
+              files.map((file) => ({
+                name: file.name,
+                url: URL.createObjectURL(file.blobFile),
+                type: file.blobFile.type.startsWith("image")
+                  ? "image"
+                  : "file",
+              }))
+            )
+          }
         />
       </Field>
 
