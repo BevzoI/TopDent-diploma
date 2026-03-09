@@ -1,66 +1,85 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-  Form,
-  Button,
   ButtonToolbar,
+  Button,
   Input,
   SelectPicker,
   CheckPicker,
-  Message,
 } from "rsuite";
 import { useForm, Controller } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from "yup";
 
-import { publishOptions } from "../../data/Options";
+import Field from "../../components/ui/Field";
 import { apiRequest, apiUrl } from "../../utils/apiData";
-import { siteUrls } from "../../utils/siteUrls";
 import { PageHeader } from "../../components/ui";
+import { siteUrls } from "../../utils/siteUrls";
 
-// ✅ SCHEMA
-const schema = yup.object({
-  title: yup.string().required("Název je povinný"),
-  publish: yup.string().oneOf(["show", "hide"]).required(),
-  groups: yup.array().of(yup.string()),
-});
+const visibilityOptions = [
+  { label: "Pro všechny", value: "all" },
+  { label: "Konkrétní uživatelé", value: "users" },
+  { label: "Konkrétní skupiny", value: "groups" },
+];
 
 export default function ChatForm() {
   const { id } = useParams();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
 
-  const [groupsList, setGroupsList] = useState([]);
-  const [apiError, setApiError] = useState("");
+  const [usersOptions, setUsersOptions] = useState([]);
+  const [groupsOptions, setGroupsOptions] = useState([]);
 
   const {
     control,
     handleSubmit,
+    watch,
     reset,
-    formState: { errors, isSubmitting },
   } = useForm({
-    resolver: yupResolver(schema),
     defaultValues: {
       title: "",
       publish: "show",
-      groups: [],
+      visibility: "all",
+      specificUsers: [],
+      specificGroups: [],
     },
   });
 
-  // 🔥 LOAD GROUPS
-  useEffect(() => {
-    const loadGroups = async () => {
-      const res = await apiRequest(apiUrl.groups);
+  const visibility = watch("visibility");
 
-      if (res?.status === "success") {
-        setGroupsList(res.data || []);
+  /* ========================================
+     LOAD USERS + GROUPS
+  ======================================== */
+
+  useEffect(() => {
+    const loadData = async () => {
+      const usersRes = await apiRequest(apiUrl.users);
+      const groupsRes = await apiRequest(apiUrl.groups);
+
+      if (usersRes?.status === "success") {
+        setUsersOptions(
+          usersRes.users.map((u) => ({
+            label: u.name || u.email,
+            value: u._id,
+          }))
+        );
+      }
+
+      if (groupsRes?.status === "success") {
+        setGroupsOptions(
+          groupsRes.data.map((g) => ({
+            label: g.name,
+            value: g._id,
+          }))
+        );
       }
     };
 
-    loadGroups();
+    loadData();
   }, []);
 
-  // 🔥 LOAD CHAT FOR EDIT
+  /* ========================================
+     LOAD EDIT DATA
+  ======================================== */
+
   useEffect(() => {
     if (!isEdit) return;
 
@@ -69,9 +88,9 @@ export default function ChatForm() {
 
       if (res?.status === "success") {
         reset({
-          title: res.data.title,
-          publish: res.data.publish,
-          groups: res.data.groups?.map((g) => g._id) || [],
+          ...res.data,
+          specificUsers: res.data.specificUsers || [],
+          specificGroups: res.data.specificGroups || [],
         });
       }
     };
@@ -79,105 +98,114 @@ export default function ChatForm() {
     loadChat();
   }, [id, isEdit, reset]);
 
-  // 🔥 SUBMIT
+  /* ========================================
+     SUBMIT
+  ======================================== */
+
   const onSubmit = async (values) => {
-    setApiError("");
+    const formData = new FormData();
 
-    const payload = {
-      title: values.title.trim(),
-      publish: values.publish,
-      groups: values.groups || [],
-    };
+    formData.append("title", values.title);
+    formData.append("publish", values.publish);
+    formData.append("visibility", values.visibility);
+    formData.append(
+      "specificUsers",
+      JSON.stringify(values.specificUsers)
+    );
+    formData.append(
+      "specificGroups",
+      JSON.stringify(values.specificGroups)
+    );
 
-    const url = isEdit ? `${apiUrl.chat}/${id}` : apiUrl.chat;
+    const url = isEdit
+      ? `${apiUrl.chat}/${id}`
+      : apiUrl.chat;
+
     const method = isEdit ? "PATCH" : "POST";
 
-    const res = await apiRequest(url, method, payload);
+    const res = await apiRequest(url, method, formData, true);
 
     if (res?.status === "success") {
       navigate(siteUrls.chat);
-    } else {
-      setApiError("Chyba při ukládání dat.");
     }
   };
 
   return (
-    <Form fluid onSubmit={handleSubmit(onSubmit)}>
+    <form onSubmit={handleSubmit(onSubmit)} noValidate>
       <PageHeader
-        title={isEdit ? "Upravit chat" : "Vytvořit nový chat"}
+        title={isEdit ? "Upravit chat" : "Vytvořit chat"}
         backTo={siteUrls.chat}
+        className="mb-20"
       />
 
-      {apiError && (
-        <Message type="error" showIcon style={{ marginBottom: 10 }}>
-          {apiError}
-        </Message>
-      )}
-
       {/* TITLE */}
-      <Form.Group>
-        <Form.ControlLabel>Název chatu</Form.ControlLabel>
+      <Field label="Název chatu">
         <Controller
           name="title"
           control={control}
-          render={({ field }) => (
-            <Input {...field} placeholder="Zadejte název..." />
-          )}
+          render={({ field }) => <Input {...field} />}
         />
-        {errors.title && (
-          <Message type="error">{errors.title.message}</Message>
-        )}
-      </Form.Group>
+      </Field>
 
-      {/* PUBLISH */}
-      <Form.Group>
-        <Form.ControlLabel>Zobrazení</Form.ControlLabel>
+      {/* VISIBILITY */}
+      <Field label="Pro koho">
         <Controller
-          name="publish"
+          name="visibility"
           control={control}
           render={({ field }) => (
             <SelectPicker
-              data={publishOptions}
+              data={visibilityOptions}
+              value={field.value}
+              onChange={field.onChange}
               cleanable={false}
-              searchable={false}
               style={{ width: "100%" }}
-              value={field.value}
-              onChange={field.onChange}
             />
           )}
         />
-      </Form.Group>
+      </Field>
 
-      {/* GROUPS */}
-      <Form.Group>
-        <Form.ControlLabel>Skupiny</Form.ControlLabel>
-        <Controller
-          name="groups"
-          control={control}
-          render={({ field }) => (
-            <CheckPicker
-              data={groupsList.map((g) => ({
-                label: g.name,
-                value: g._id,
-              }))}
-              value={field.value}
-              onChange={field.onChange}
-              style={{ width: "100%" }}
-              placeholder="Vyberte skupiny"
-              block
-            />
-          )}
-        />
-      </Form.Group>
+      {visibility === "users" && (
+        <Field label="Vyberte uživatele">
+          <Controller
+            name="specificUsers"
+            control={control}
+            render={({ field }) => (
+              <CheckPicker
+                data={usersOptions}
+                value={field.value}
+                onChange={field.onChange}
+                style={{ width: "100%" }}
+              />
+            )}
+          />
+        </Field>
+      )}
 
-      <ButtonToolbar>
-        <Button appearance="primary" type="submit" loading={isSubmitting}>
+      {visibility === "groups" && (
+        <Field label="Vyberte skupiny">
+          <Controller
+            name="specificGroups"
+            control={control}
+            render={({ field }) => (
+              <CheckPicker
+                data={groupsOptions}
+                value={field.value}
+                onChange={field.onChange}
+                style={{ width: "100%" }}
+              />
+            )}
+          />
+        </Field>
+      )}
+
+      <ButtonToolbar style={{ marginTop: 24 }}>
+        <Button appearance="primary" type="submit">
           {isEdit ? "Uložit změny" : "Vytvořit chat"}
         </Button>
         <Button appearance="subtle" onClick={() => navigate(siteUrls.chat)}>
           Zpět
         </Button>
       </ButtonToolbar>
-    </Form>
+    </form>
   );
 }

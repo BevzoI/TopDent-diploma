@@ -1,5 +1,4 @@
 import Chat from "../models/Chat.js";
-import User from "../models/User.js";
 import cloudinary from "../utils/cloudinary.js";
 
 /* =====================================================
@@ -7,12 +6,17 @@ import cloudinary from "../utils/cloudinary.js";
 ===================================================== */
 
 function hasAccess(chat, user) {
+  if (!user) return false;
+
   if (user.role === "admin") return true;
+
+  if (chat.publish === "hide") return false;
 
   if (chat.visibility === "all") return true;
 
   if (
     chat.visibility === "users" &&
+    Array.isArray(chat.specificUsers) &&
     chat.specificUsers.some(
       (id) => id.toString() === user._id.toString()
     )
@@ -22,14 +26,14 @@ function hasAccess(chat, user) {
 
   if (
     chat.visibility === "groups" &&
-    chat.specificGroups.some((groupId) =>
-      user.groups.some(
-        (userGroup) =>
-          userGroup.toString() === groupId.toString()
-      )
-    )
+    Array.isArray(chat.specificGroups) &&
+    Array.isArray(user.groups)
   ) {
-    return true;
+    return chat.specificGroups.some((groupId) =>
+      user.groups
+        .map((g) => g.toString())
+        .includes(groupId.toString())
+    );
   }
 
   return false;
@@ -43,30 +47,20 @@ export async function getChats(req, res) {
   try {
     const user = req.user;
 
-    let query = {};
-
-    if (user.role !== "admin") {
-      query = {
-        publish: "show",
-        $or: [
-          { visibility: "all" },
-          { visibility: "users", specificUsers: user._id },
-          {
-            visibility: "groups",
-            specificGroups: { $in: user.groups || [] },
-          },
-        ],
-      };
-    }
-
-    const chats = await Chat.find(query)
+    const chats = await Chat.find()
       .populate("author", "name email")
+      .populate("specificGroups", "name")
       .sort({ createdAt: -1 });
+
+    const filtered = chats.filter((chat) =>
+      hasAccess(chat, user)
+    );
 
     return res.json({
       status: "success",
-      data: chats,
+      data: filtered,
     });
+
   } catch (error) {
     console.error("Chyba při načítání chatů:", error);
     return res.status(500).json({ status: "error" });
@@ -83,7 +77,8 @@ export async function getChatById(req, res) {
 
     const chat = await Chat.findById(req.params.id)
       .populate("author", "name email")
-      .populate("messages.sender", "name email");
+      .populate("messages.sender", "name email")
+      .populate("specificGroups", "name");
 
     if (!chat) {
       return res.status(404).json({ status: "error" });
@@ -100,6 +95,7 @@ export async function getChatById(req, res) {
       status: "success",
       data: chat,
     });
+
   } catch (error) {
     console.error("Chyba při načítání chatu:", error);
     return res.status(500).json({ status: "error" });
@@ -140,6 +136,7 @@ export async function createChat(req, res) {
       status: "success",
       data: chat,
     });
+
   } catch (error) {
     console.error("Chyba při vytváření chatu:", error);
     return res.status(400).json({ status: "error" });
@@ -180,6 +177,7 @@ export async function updateChat(req, res) {
       status: "success",
       data: updated,
     });
+
   } catch (error) {
     console.error("Chyba při úpravě chatu:", error);
     return res.status(400).json({ status: "error" });
@@ -195,6 +193,7 @@ export async function deleteChat(req, res) {
     await Chat.findByIdAndDelete(req.params.id);
     return res.json({ status: "success" });
   } catch (error) {
+    console.error("Chyba při mazání chatu:", error);
     return res.status(500).json({ status: "error" });
   }
 }
@@ -222,22 +221,19 @@ export async function sendMessage(req, res) {
 
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
-        const uploadResult = await new Promise(
-          (resolve, reject) => {
-            const stream =
-              cloudinary.uploader.upload_stream(
-                {
-                  resource_type: "auto",
-                  folder: "chat",
-                },
-                (error, result) => {
-                  if (error) reject(error);
-                  else resolve(result);
-                }
-              );
-            stream.end(file.buffer);
-          }
-        );
+        const uploadResult = await new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            {
+              resource_type: "auto",
+              folder: "chat",
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+          stream.end(file.buffer);
+        });
 
         uploadedFiles.push({
           url: uploadResult.secure_url,
@@ -265,6 +261,7 @@ export async function sendMessage(req, res) {
       status: "success",
       data: updated,
     });
+
   } catch (error) {
     console.error("Chyba při odesílání zprávy:", error);
     return res.status(500).json({ status: "error" });

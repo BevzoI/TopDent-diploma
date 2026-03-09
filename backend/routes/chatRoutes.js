@@ -22,7 +22,7 @@ router.get("/", authMiddleware, getChats);
 router.get("/:id", authMiddleware, getChatById);
 
 /* =====================================================
-   ADMIN – vytváření a úpravy
+   ADMIN – vytváření a úpravy chatu
 ===================================================== */
 
 router.post(
@@ -47,13 +47,13 @@ router.delete(
 );
 
 /* =====================================================
-   SEND MESSAGE + FILES
+   SEND MESSAGE + FILE UPLOAD
 ===================================================== */
 
 router.post(
   "/:id/message",
   authMiddleware,
-  upload.array("files"),   // 🔥 důležité pro Cloudinary
+  upload.array("files"), // 🔥 důležité pro Cloudinary
   sendMessage
 );
 
