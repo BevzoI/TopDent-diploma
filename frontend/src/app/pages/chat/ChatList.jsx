@@ -25,6 +25,7 @@ export default function ChatList() {
   useEffect(() => {
     const loadChats = async () => {
       const res = await apiRequest(apiUrl.chat, "GET");
+      console.log("CHAT RESPONSE:", res);
 
       if (res?.status === "success") {
         setChats(res.data || []);
