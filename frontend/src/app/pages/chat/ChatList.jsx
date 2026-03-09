@@ -70,14 +70,14 @@ export default function ChatList() {
       <FlexboxGrid justify="start" align="top" gutter={20}>
         {chats.map((chat) => (
           <FlexboxGrid.Item
-            key={chat.id}
+            key={chat._id}
             colspan={24}
             sm={12}
             md={8}
             lg={6}
           >
             <Panel bordered shaded className="chat-card">
-              <Link to={siteUrls.viewChat(chat.id)} className="chat-title">
+              <Link to={siteUrls.viewChat(chat._id)} className="chat-title">
                 {chat.title}
               </Link>
 
@@ -104,7 +104,7 @@ export default function ChatList() {
               {user?.role === "admin" && (
                 <div className="admin-actions">
                   <Link
-                    to={siteUrls.editChat(chat.id)}
+                    to={siteUrls.editChat(chat._id)}
                     className="btn btn-sm btn-green"
                   >
                     Upravit
@@ -112,7 +112,7 @@ export default function ChatList() {
 
                   <button
                     className="btn btn-sm btn-red"
-                    onClick={() => deleteChat(chat.id)}
+                    onClick={() => deleteChat(chat._id)}
                   >
                     Smazat
                   </button>
