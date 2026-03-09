@@ -7,35 +7,35 @@ import upload from "../middleware/uploadMiddleware.js";
 const router = express.Router();
 
 /* =====================================================
-   GET (тільки авторизовані)
+   🔐 GET – pouze přihlášení uživatelé
 ===================================================== */
 
 router.get("/", authMiddleware, news.getAllNews);
 router.get("/:id", authMiddleware, news.getOneNews);
 
 /* =====================================================
-   ADMIN ONLY + FILE UPLOAD
+   👑 ADMIN – create / update s uploadem souborů
 ===================================================== */
 
-// 🔥 CREATE з файлами
+// CREATE news + soubory
 router.post(
   "/",
   authMiddleware,
   adminOnly,
-  upload.array("files"),   // <-- важливо
+  upload.array("files", 10), // max 10 souborů
   news.createNews
 );
 
-// 🔥 UPDATE з файлами
+// UPDATE news + soubory
 router.patch(
   "/:id",
   authMiddleware,
   adminOnly,
-  upload.array("files"),   // <-- важливо
+  upload.array("files", 10),
   news.updateNews
 );
 
-// DELETE
+// DELETE news
 router.delete(
   "/:id",
   authMiddleware,

@@ -27,8 +27,8 @@ const visibilityOptions = [
 ];
 
 const schema = yup.object({
-  title: yup.string().required().min(3),
-  text: yup.string().required().min(10),
+  title: yup.string().required("Název je povinný").min(3),
+  text: yup.string().required("Text je povinný").min(10),
   publish: yup.string().required(),
   visibility: yup.string().required(),
 });
@@ -62,7 +62,10 @@ export default function NewsForm() {
 
   const visibility = watch("visibility");
 
-  // 🔹 Load users + groups
+  /* =========================================
+     Load users + groups
+  ========================================= */
+
   useEffect(() => {
     const loadData = async () => {
       const usersRes = await apiRequest(apiUrl.users);
@@ -90,7 +93,10 @@ export default function NewsForm() {
     loadData();
   }, []);
 
-  // 🔹 Load edit data
+  /* =========================================
+     Load edit data
+  ========================================= */
+
   useEffect(() => {
     if (!isEdit) return;
 
@@ -99,30 +105,69 @@ export default function NewsForm() {
 
       if (res?.status === "success") {
         reset({
-          ...res.data,
+          title: res.data.title || "",
+          text: res.data.text || "",
+          publish: res.data.publish || "hide",
+          visibility: res.data.visibility || "all",
           specificUsers: res.data.specificUsers || [],
           specificGroups: res.data.specificGroups || [],
         });
-        setAttachments(res.data.attachments || []);
+
+        setAttachments([]);
       }
     };
 
     loadNews();
   }, [id, isEdit, reset]);
 
-  const onSubmit = async (values) => {
-    const payload = {
-      ...values,
-      attachments,
-    };
+  /* =========================================
+     SUBMIT (FormData pro upload)
+  ========================================= */
 
-    const url = isEdit ? `${apiUrl.news}/${id}` : apiUrl.news;
+  const onSubmit = async (values) => {
+    const formData = new FormData();
+
+    formData.append("title", values.title);
+    formData.append("text", values.text);
+    formData.append("publish", values.publish);
+    formData.append("visibility", values.visibility);
+
+    formData.append(
+      "specificUsers",
+      JSON.stringify(values.specificUsers || [])
+    );
+
+    formData.append(
+      "specificGroups",
+      JSON.stringify(values.specificGroups || [])
+    );
+
+    attachments.forEach((file) => {
+      if (file.blobFile) {
+        formData.append("files", file.blobFile);
+      }
+    });
+
+    const url = isEdit
+      ? `${apiUrl.news}/${id}`
+      : apiUrl.news;
+
     const method = isEdit ? "PATCH" : "POST";
 
-    const res = await apiRequest(url, method, payload);
+    const response = await fetch(url, {
+      method,
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: formData,
+    });
 
-    if (res?.status === "success") {
+    const data = await response.json();
+
+    if (data.status === "success") {
       navigate(siteUrls.news);
+    } else {
+      alert(data.message || "Chyba při ukládání");
     }
   };
 
@@ -229,17 +274,7 @@ export default function NewsForm() {
         <Uploader
           multiple
           autoUpload={false}
-          onChange={(files) =>
-            setAttachments(
-              files.map((file) => ({
-                name: file.name,
-                url: URL.createObjectURL(file.blobFile),
-                type: file.blobFile.type.startsWith("image")
-                  ? "image"
-                  : "file",
-              }))
-            )
-          }
+          onChange={(files) => setAttachments(files)}
         />
       </Field>
 
