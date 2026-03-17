@@ -27,10 +27,11 @@ router.post("/set-password", setPassword);
 /* =====================================================
    🔒 CHANGE PASSWORD (logged in user)
 ===================================================== */
-router.post(
-  "/change-password",
-  authMiddleware,
-  changePassword
-);
+// ❌ ТИМЧАСОВО ВИМКНЕНО
+// router.post(
+//   "/change-password",
+//   authMiddleware,
+//   changePassword
+// );
 
 export default router;
