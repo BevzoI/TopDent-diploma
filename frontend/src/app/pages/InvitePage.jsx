@@ -17,6 +17,11 @@ export default function InvitePage() {
   // 🔥 deep link в мобілку
   const appLink = `topdentteammobileapp://invite/${token}`;
 
+  const handleOpenApp = () => {
+    // 🔥 примусовий перехід
+    window.location.href = appLink;
+  };
+
   const handleSubmit = async () => {
     if (!password) {
       setError("Zadejte heslo.");
@@ -75,22 +80,15 @@ export default function InvitePage() {
         </Message>
       )}
 
-      {/* 🔥 КНОПКА ВІДКРИТИ В ДОДАТКУ */}
-      <a
-        href={appLink}
-        style={{
-          display: "block",
-          marginBottom: 16,
-          textAlign: "center",
-          padding: 10,
-          background: "#000",
-          color: "#fff",
-          borderRadius: 8,
-          textDecoration: "none",
-        }}
+      {/* 🔥 НОВА КНОПКА */}
+      <Button
+        appearance="ghost"
+        onClick={handleOpenApp}
+        block
+        style={{ marginBottom: 16 }}
       >
         📱 Otevřít v aplikaci
-      </a>
+      </Button>
 
       <Input
         type="password"
