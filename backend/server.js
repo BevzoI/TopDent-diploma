@@ -58,20 +58,13 @@ const allowedOrigins = [
   "http://localhost:3000",
 ];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+}));
 
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-  })
-);
+// 🔥 ВАЖЛИВО: обробка preflight (OPTIONS)
+app.options('*', cors());
 
 /* =======================================================
    BODY PARSER
@@ -105,7 +98,8 @@ app.use("/groups", groupsRoutes);
 
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: allowedOrigins,
+    credentials: true,
   },
 });
 
