@@ -44,6 +44,7 @@ function hasAccess(chat, user) {
 ===================================================== */
 
 export async function getChats(req, res) {
+  console.log("REQ.USER =", req.user);
   try {
     const user = req.user;
 
@@ -205,7 +206,7 @@ export async function deleteChat(req, res) {
 export async function sendMessage(req, res) {
   try {
     const user = req.user;
-    const { content } = req.body;
+    const { content, image, audio } = req.body;
 
     const chat = await Chat.findById(req.params.id);
 
@@ -217,8 +218,11 @@ export async function sendMessage(req, res) {
       return res.status(403).json({ status: "error" });
     }
 
-    let uploadedFiles = [];
+    let attachments = [];
 
+    /* ================================
+       1️⃣ FILE UPLOAD (multipart)
+    ================================= */
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
         const uploadResult = await new Promise((resolve, reject) => {
@@ -235,35 +239,62 @@ export async function sendMessage(req, res) {
           stream.end(file.buffer);
         });
 
-        uploadedFiles.push({
+        attachments.push({
           url: uploadResult.secure_url,
-          name: file.originalname,
-          type:
-            uploadResult.resource_type === "image"
-              ? "image"
-              : "file",
+          type: uploadResult.resource_type,
         });
       }
     }
 
-    chat.messages.push({
-      content,
-      sender: user._id,
-      attachments: uploadedFiles,
-    });
+    /* ================================
+       2️⃣ MOBILE IMAGE URI
+    ================================= */
+    if (image) {
+      attachments.push({
+        url: image,
+        type: "image",
+      });
+    }
 
+    /* ================================
+       3️⃣ MOBILE AUDIO URI
+    ================================= */
+    if (audio) {
+      attachments.push({
+        url: audio,
+        type: "audio",
+      });
+    }
+
+    /* ================================
+       4️⃣ CREATE MESSAGE
+    ================================= */
+    const newMessage = {
+      content: content || null,
+      sender: user._id,
+      attachments,
+      createdAt: new Date(),
+    };
+
+    chat.messages.push(newMessage);
     await chat.save();
 
-    const updated = await Chat.findById(chat._id)
-      .populate("messages.sender", "name email");
+    /* ================================
+       5️⃣ RETURN LAST MESSAGE POPULATED
+    ================================= */
+    const updatedChat = await Chat.findById(chat._id)
+      .populate("messages.sender", "name email avatar");
+
+    const lastMessage =
+      updatedChat.messages[updatedChat.messages.length - 1];
 
     return res.json({
       status: "success",
-      data: updated,
+      message: lastMessage,
     });
 
   } catch (error) {
-    console.error("Chyba při odesílání zprávy:", error);
+    console.error("Send message error:", error);
     return res.status(500).json({ status: "error" });
   }
 }

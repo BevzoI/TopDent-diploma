@@ -5,9 +5,9 @@ import bcrypt from "bcryptjs";
 import cloudinary from "../utils/cloudinary.js";
 import { sendInviteEmail } from "../utils/sendEmail.js";
 
-// -------------------------
-// CREATE USER (WITH INVITE FLOW)
-// -------------------------
+/* =====================================================
+   CREATE USER (WITH INVITE FLOW)
+===================================================== */
 export async function createUser(req, res) {
   const { email, role, phone, groups } = req.body;
 
@@ -30,7 +30,6 @@ export async function createUser(req, res) {
     const randomIndex = Math.floor(Math.random() * 100) + 1;
     const avatarPath = `AV${randomIndex}.webp`;
 
-    // Створюємо юзера без пароля
     const newUser = await User.create({
       email,
       role: role || "user",
@@ -40,18 +39,16 @@ export async function createUser(req, res) {
       isActive: false,
     });
 
-    // Генеруємо invite token
     const token = crypto.randomBytes(32).toString("hex");
 
     await Invite.create({
       token,
       user: newUser._id,
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24), // 24h
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
     });
 
     const inviteLink = `${process.env.FRONTEND_URL}/invite/${token}`;
 
-    // 🔥 ВІДПРАВКА EMAIL
     await sendInviteEmail(email, inviteLink);
 
     return res.json({
@@ -72,24 +69,23 @@ export async function createUser(req, res) {
   }
 }
 
-// -------------------------
-// GET ALL USERS
-// -------------------------
+/* =====================================================
+   GET ALL USERS
+===================================================== */
 export async function getAllUsers(req, res) {
   try {
     const users = await User.find()
       .populate("groups")
       .lean();
 
-    const formattedUsers = users.map((u) => ({
-      ...u,
-      id: u._id,
-    }));
-
     return res.json({
       status: "success",
-      users: formattedUsers,
+      users: users.map((u) => ({
+        ...u,
+        id: u._id,
+      })),
     });
+
   } catch (error) {
     console.error("Get all users error:", error);
     return res.status(500).json({
@@ -99,14 +95,12 @@ export async function getAllUsers(req, res) {
   }
 }
 
-// -------------------------
-// GET USER BY ID
-// -------------------------
+/* =====================================================
+   GET USER BY ID
+===================================================== */
 export async function getUserById(req, res) {
   try {
-    const { id } = req.params;
-
-    const user = await User.findById(id)
+    const user = await User.findById(req.params.id)
       .populate("groups")
       .lean();
 
@@ -124,6 +118,7 @@ export async function getUserById(req, res) {
         id: user._id,
       },
     });
+
   } catch (error) {
     console.error("Get user error:", error);
     return res.status(500).json({
@@ -133,9 +128,9 @@ export async function getUserById(req, res) {
   }
 }
 
-// -------------------------
-// UPDATE USER
-// -------------------------
+/* =====================================================
+   UPDATE USER
+===================================================== */
 export async function updateUserById(req, res) {
   try {
     const { id } = req.params;
@@ -156,15 +151,13 @@ export async function updateUserById(req, res) {
 
     if (email) updateData.email = email.trim();
     if (phone) updateData.phone = phone.trim();
-    if (name !== undefined) updateData.name = name.trim();
-    if (clinic !== undefined) updateData.clinic = clinic.trim();
+    if (name !== undefined) updateData.name = name?.trim();
+    if (clinic !== undefined) updateData.clinic = clinic?.trim();
     if (birthDate !== undefined) updateData.birthDate = birthDate || null;
     if (role) updateData.role = role;
 
-    // 🔐 Хешуємо пароль
     if (password && password.trim().length > 0) {
-      const hashed = await bcrypt.hash(password.trim(), 10);
-      updateData.password = hashed;
+      updateData.password = await bcrypt.hash(password.trim(), 10);
       updateData.isActive = true;
     }
 
@@ -172,6 +165,7 @@ export async function updateUserById(req, res) {
       updateData.groups = groups;
     }
 
+    // 🔥 Web base64 avatar
     if (avatar && typeof avatar === "string") {
       if (avatar.startsWith("data:image")) {
         const upload = await cloudinary.uploader.upload(avatar, {
@@ -179,6 +173,7 @@ export async function updateUserById(req, res) {
           public_id: `user_${id}`,
           overwrite: true,
         });
+
         updateData.avatar = upload.secure_url;
       } else {
         updateData.avatar = avatar;
@@ -215,18 +210,13 @@ export async function updateUserById(req, res) {
   }
 }
 
-// -------------------------
-// DELETE USER
-// -------------------------
+/* =====================================================
+   DELETE USER
+===================================================== */
 export async function deleteUser(req, res) {
   try {
-    const { id } = req.params;
-
-    await User.findByIdAndDelete(id);
-
-    return res.json({
-      status: "success",
-    });
+    await User.findByIdAndDelete(req.params.id);
+    return res.json({ status: "success" });
   } catch (error) {
     console.error("Delete user error:", error);
     return res.status(500).json({
@@ -236,14 +226,12 @@ export async function deleteUser(req, res) {
   }
 }
 
-// -------------------------
-// GET USER NOTIFICATIONS
-// -------------------------
+/* =====================================================
+   GET USER NOTIFICATIONS
+===================================================== */
 export async function getUserNotifications(req, res) {
   try {
-    const { userId } = req.params;
-
-    const user = await User.findById(userId).lean();
+    const user = await User.findById(req.params.userId).lean();
 
     if (!user) {
       return res.status(404).json({
@@ -269,6 +257,60 @@ export async function getUserNotifications(req, res) {
     return res.status(500).json({
       status: "error",
       message: "Chyba serveru.",
+    });
+  }
+}
+
+/* =====================================================
+   UPDATE AVATAR (MOBILE)
+===================================================== */
+export async function updateAvatar(req, res) {
+  try {
+    const userId = req.user._id;
+
+    if (!req.file) {
+      return res.status(400).json({
+        status: "error",
+        message: "Avatar file is required.",
+      });
+    }
+
+    const uploadResult = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder: "avatars",
+          public_id: `user_${userId}`,
+          overwrite: true,
+          resource_type: "image",
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+
+      stream.end(req.file.buffer);
+    });
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { avatar: uploadResult.secure_url },
+      { new: true }
+    ).lean();
+
+    return res.json({
+      status: "success",
+      user: {
+        id: updatedUser._id,
+        avatar: updatedUser.avatar,
+      },
+    });
+
+  } catch (error) {
+    console.error("Update avatar error:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Chyba při aktualizaci avatara.",
     });
   }
 }
