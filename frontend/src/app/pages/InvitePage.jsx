@@ -14,9 +14,17 @@ export default function InvitePage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // 🔥 deep link в мобілку
+  const appLink = `topdentteammobileapp://invite/${token}`;
+
   const handleSubmit = async () => {
     if (!password) {
       setError("Zadejte heslo.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Heslo musí mít alespoň 6 znaků.");
       return;
     }
 
@@ -30,7 +38,7 @@ export default function InvitePage() {
     );
 
     if (res?.status === "success") {
-      // 🔥 АВТОЛОГІН
+      // 🔥 авто-логін
       const payload = {
         ...res.user,
         notifications: {
@@ -46,6 +54,8 @@ export default function InvitePage() {
       const encoded = encodeBase64(payload);
       localStorage.setItem("token", encoded);
       setUser(payload);
+
+      alert("Účet byl aktivován ✅");
 
       navigate("/");
     } else {
@@ -65,6 +75,23 @@ export default function InvitePage() {
         </Message>
       )}
 
+      {/* 🔥 КНОПКА ВІДКРИТИ В ДОДАТКУ */}
+      <a
+        href={appLink}
+        style={{
+          display: "block",
+          marginBottom: 16,
+          textAlign: "center",
+          padding: 10,
+          background: "#000",
+          color: "#fff",
+          borderRadius: 8,
+          textDecoration: "none",
+        }}
+      >
+        📱 Otevřít v aplikaci
+      </a>
+
       <Input
         type="password"
         placeholder="Zadejte nové heslo"
@@ -73,7 +100,13 @@ export default function InvitePage() {
         style={{ marginBottom: 12 }}
       />
 
-      <Button appearance="primary" onClick={handleSubmit} block loading={loading}>
+      <Button
+        appearance="primary"
+        onClick={handleSubmit}
+        block
+        loading={loading}
+        disabled={!password}
+      >
         Nastavit heslo
       </Button>
     </div>
