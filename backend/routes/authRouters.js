@@ -3,7 +3,6 @@ import {
   login,
   checkInvite,
   setPassword,
-  changePassword,
 } from "../controllers/authController.js";
 
 import authMiddleware from "../middleware/authMiddleware.js";
