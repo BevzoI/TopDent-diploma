@@ -50,6 +50,7 @@ export const getAllNews = async (req, res) => {
     return res.status(500).json({
       status: "error",
       message: "Nepodařilo se načíst zprávy",
+      error: error.message,
     });
   }
 };
@@ -60,8 +61,10 @@ export const getAllNews = async (req, res) => {
 
 export const getOneNews = async (req, res) => {
   try {
-    const item = await News.findById(req.params.id)
-      .populate("author", "name email");
+    const item = await News.findById(req.params.id).populate(
+      "author",
+      "name email"
+    );
 
     if (!item) {
       return res.status(404).json({
@@ -79,6 +82,7 @@ export const getOneNews = async (req, res) => {
     return res.status(400).json({
       status: "error",
       message: "Nepodařilo se načíst zprávu",
+      error: error.message,
     });
   }
 };
@@ -90,6 +94,19 @@ export const getOneNews = async (req, res) => {
 export const createNews = async (req, res) => {
   try {
     const user = req.user;
+
+    console.log("=== CREATE NEWS START ===");
+    console.log("BODY:", req.body);
+    console.log(
+      "FILES:",
+      (req.files || []).map((f) => ({
+        fieldname: f.fieldname,
+        originalname: f.originalname,
+        mimetype: f.mimetype,
+        size: f.size,
+        hasBuffer: !!f.buffer,
+      }))
+    );
 
     const {
       title,
@@ -104,27 +121,36 @@ export const createNews = async (req, res) => {
 
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
+        console.log("Uploading file:", {
+          originalname: file.originalname,
+          mimetype: file.mimetype,
+          size: file.size,
+          hasBuffer: !!file.buffer,
+        });
+
         const uploadResult = await new Promise((resolve, reject) => {
           const stream = cloudinary.uploader.upload_stream(
             {
-              resource_type: "auto",
+              resource_type: "image",
               folder: "news",
             },
             (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
+              if (error) {
+                console.error("CLOUDINARY ERROR:", error);
+                reject(error);
+              } else {
+                resolve(result);
+              }
             }
           );
+
           stream.end(file.buffer);
         });
 
         uploadedFiles.push({
           url: uploadResult.secure_url,
           name: file.originalname,
-          type:
-            uploadResult.resource_type === "image"
-              ? "image"
-              : "file",
+          type: "image",
         });
       }
     }
@@ -132,27 +158,27 @@ export const createNews = async (req, res) => {
     const newsData = {
       title,
       text,
-      publish,
+      publish: publish || "show",
       visibility: visibility || "all",
       attachments: uploadedFiles,
       author: user._id,
+      specificUsers: [],
+      specificGroups: [],
     };
 
     if (visibility === "users") {
-      newsData.specificUsers = specificUsers
-        ? JSON.parse(specificUsers)
-        : [];
+      newsData.specificUsers = specificUsers ? JSON.parse(specificUsers) : [];
     }
 
     if (visibility === "groups") {
-      newsData.specificGroups = specificGroups
-        ? JSON.parse(specificGroups)
-        : [];
+      newsData.specificGroups = specificGroups ? JSON.parse(specificGroups) : [];
     }
 
     const item = await News.create(newsData);
 
     await User.updateMany({}, { $set: { newNews: true } });
+
+    console.log("=== CREATE NEWS SUCCESS ===");
 
     return res.status(201).json({
       status: "success",
@@ -160,9 +186,11 @@ export const createNews = async (req, res) => {
     });
   } catch (error) {
     console.error("Chyba při vytváření zprávy:", error);
+
     return res.status(400).json({
       status: "error",
       message: "Nepodařilo se vytvořit zprávu",
+      error: error.message,
     });
   }
 };
@@ -173,6 +201,19 @@ export const createNews = async (req, res) => {
 
 export const updateNews = async (req, res) => {
   try {
+    console.log("=== UPDATE NEWS START ===");
+    console.log("BODY:", req.body);
+    console.log(
+      "FILES:",
+      (req.files || []).map((f) => ({
+        fieldname: f.fieldname,
+        originalname: f.originalname,
+        mimetype: f.mimetype,
+        size: f.size,
+        hasBuffer: !!f.buffer,
+      }))
+    );
+
     const {
       title,
       text,
@@ -197,16 +238,12 @@ export const updateNews = async (req, res) => {
     item.visibility = visibility;
 
     if (visibility === "users") {
-      item.specificUsers = specificUsers
-        ? JSON.parse(specificUsers)
-        : [];
+      item.specificUsers = specificUsers ? JSON.parse(specificUsers) : [];
       item.specificGroups = [];
     }
 
     if (visibility === "groups") {
-      item.specificGroups = specificGroups
-        ? JSON.parse(specificGroups)
-        : [];
+      item.specificGroups = specificGroups ? JSON.parse(specificGroups) : [];
       item.specificUsers = [];
     }
 
@@ -217,6 +254,13 @@ export const updateNews = async (req, res) => {
 
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
+        console.log("Uploading file:", {
+          originalname: file.originalname,
+          mimetype: file.mimetype,
+          size: file.size,
+          hasBuffer: !!file.buffer,
+        });
+
         const uploadResult = await new Promise((resolve, reject) => {
           const stream = cloudinary.uploader.upload_stream(
             {
@@ -224,25 +268,29 @@ export const updateNews = async (req, res) => {
               folder: "news",
             },
             (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
+              if (error) {
+                console.error("CLOUDINARY ERROR:", error);
+                reject(error);
+              } else {
+                resolve(result);
+              }
             }
           );
+
           stream.end(file.buffer);
         });
 
         item.attachments.push({
           url: uploadResult.secure_url,
           name: file.originalname,
-          type:
-            uploadResult.resource_type === "image"
-              ? "image"
-              : "file",
+          type: uploadResult.resource_type === "image" ? "image" : "file",
         });
       }
     }
 
     await item.save();
+
+    console.log("=== UPDATE NEWS SUCCESS ===");
 
     return res.json({
       status: "success",
@@ -253,6 +301,7 @@ export const updateNews = async (req, res) => {
     return res.status(400).json({
       status: "error",
       message: "Nepodařilo se upravit zprávu",
+      error: error.message,
     });
   }
 };
@@ -281,6 +330,7 @@ export const deleteNews = async (req, res) => {
     return res.status(400).json({
       status: "error",
       message: "Nepodařilo se smazat zprávu",
+      error: error.message,
     });
   }
 };

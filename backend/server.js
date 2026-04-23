@@ -56,15 +56,19 @@ const allowedOrigins = [
   "https://topdentteam.cz",
   "https://www.topdentteam.cz",
   "http://localhost:3000",
+  "http://192.168.0.121:8081",
+  "http://192.168.0.121:19006",
+  "exp://192.168.0.121:8081",
 ];
 
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  }),
+);
 
-// 🔥 ВАЖЛИВО: обробка preflight (OPTIONS)
-app.options('*', cors());
+app.options("*", cors());
 
 /* =======================================================
    BODY PARSER
@@ -93,7 +97,7 @@ app.use("/chat", chatRoutes);
 app.use("/groups", groupsRoutes);
 
 /* =======================================================
-   SOCKET.IO (REALTIME CHAT)
+   SOCKET.IO
 ======================================================= */
 
 const io = new Server(server, {
@@ -103,30 +107,27 @@ const io = new Server(server, {
   },
 });
 
-const onlineUsers = new Map(); // userId -> socketId
+const onlineUsers = new Map();
 
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
-  /* ================= JOIN CHAT ================= */
   socket.on("join_chat", ({ chatId, userId }) => {
     if (!chatId || !userId) return;
 
     socket.join(chatId);
-    socket.userId = userId;
+    socket.userId = userId.toString();
 
-    onlineUsers.set(userId, socket.id);
+    onlineUsers.set(socket.userId, socket.id);
 
     io.emit("online_users", Array.from(onlineUsers.keys()));
   });
 
-  /* ================= TYPING ================= */
   socket.on("typing", ({ chatId }) => {
-    if (!socket.userId) return;
+    if (!socket.userId || !chatId) return;
     socket.to(chatId).emit("typing", socket.userId);
   });
 
-  /* ================= SEND MESSAGE ================= */
   socket.on("send_message", async ({ chatId, message }) => {
     try {
       if (!socket.userId || !chatId) return;
@@ -134,33 +135,56 @@ io.on("connection", (socket) => {
       const chat = await Chat.findById(chatId);
       if (!chat) return;
 
+      const attachments = [];
+
+      if (message?.attachments && Array.isArray(message.attachments)) {
+        attachments.push(...message.attachments);
+      }
+
+      if (message?.image) {
+        attachments.push({
+          url: message.image,
+          name: "image",
+          type: "image",
+        });
+      }
+
+      if (message?.audio) {
+        attachments.push({
+          url: message.audio,
+          name: "audio",
+          type: "audio",
+        });
+      }
+
       const newMessage = {
         content: message?.content || null,
-        image: message?.image || null,
-        audio: message?.audio || null,
-        attachments: message?.attachments || [],
         sender: socket.userId,
+        attachments,
         createdAt: new Date(),
         readBy: [socket.userId],
+        edited: false,
+        isDeletedForEveryone: false,
+        deletedForUsers: [],
       };
 
       chat.messages.push(newMessage);
       await chat.save();
 
-      const populatedChat = await Chat.findById(chatId)
-        .populate("messages.sender", "name email avatar");
+      const populatedChat = await Chat.findById(chatId).populate(
+        "messages.sender",
+        "name email avatar",
+      );
 
       const savedMessage =
         populatedChat.messages[populatedChat.messages.length - 1];
 
       io.to(chatId).emit("receive_message", savedMessage);
-
     } catch (err) {
       console.log("Socket message error:", err);
     }
   });
 
-  /* ================= READ RECEIPT ================= */
   socket.on("message_read", async ({ chatId, messageId }) => {
     try {
       if (!socket.userId || !chatId || !messageId) return;
@@ -171,7 +195,15 @@ io.on("connection", (socket) => {
       const message = chat.messages.id(messageId);
       if (!message) return;
 
-      if (!message.readBy.includes(socket.userId)) {
+      if (!Array.isArray(message.readBy)) {
+        message.readBy = [];
+      }
+
+      const alreadyRead = message.readBy.some(
+        (id) => id.toString() === socket.userId.toString(),
+      );
+
+      if (!alreadyRead) {
         message.readBy.push(socket.userId);
         await chat.save();
       }
@@ -180,13 +212,11 @@ io.on("connection", (socket) => {
         messageId,
         userId: socket.userId,
       });
-
     } catch (err) {
       console.log("Read receipt error:", err);
     }
   });
 
-  /* ================= DISCONNECT ================= */
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
 
@@ -197,10 +227,6 @@ io.on("connection", (socket) => {
     io.emit("online_users", Array.from(onlineUsers.keys()));
   });
 });
-
-/* =======================================================
-   START SERVER
-======================================================= */
 
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

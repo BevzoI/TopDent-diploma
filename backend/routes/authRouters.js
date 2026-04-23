@@ -10,24 +10,23 @@ import authMiddleware from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 /* =====================================================
-   🔐 LOGIN
+   LOGIN
 ===================================================== */
 router.post("/login", login);
 
 /* =====================================================
-   🔍 CHECK INVITE (for new user)
+   CHECK INVITE (for new user)
 ===================================================== */
 router.get("/invite/:token", checkInvite);
 
 /* =====================================================
-   🔑 SET PASSWORD (first activation)
+   SET PASSWORD (first activation)
 ===================================================== */
 router.post("/set-password", setPassword);
 
 /* =====================================================
-   🔒 CHANGE PASSWORD (logged in user)
+   CHANGE PASSWORD (logged in user)
 ===================================================== */
-// ❌ ТИМЧАСОВО ВИМКНЕНО
 // router.post(
 //   "/change-password",
 //   authMiddleware,

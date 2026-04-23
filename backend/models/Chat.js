@@ -1,25 +1,52 @@
 import mongoose from "mongoose";
 
+const attachmentSchema = new mongoose.Schema(
+  {
+    url: { type: String, required: true },
+    name: { type: String, default: "" },
+    type: { type: String, default: "file" },
+  },
+  { _id: false },
+);
+
 const messageSchema = new mongoose.Schema(
   {
     content: {
       type: String,
-      trim: true,
+      default: null,
     },
     sender: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-    attachments: [
+    attachments: [attachmentSchema],
+    readBy: [
       {
-        url: String,
-        name: String,
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
       },
     ],
+    edited: {
+      type: Boolean,
+      default: false,
+    },
+    isDeletedForEveryone: {
+      type: Boolean,
+      default: false,
+    },
+    deletedForUsers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
   },
-  { timestamps: true }
+  { _id: true },
 );
 
 const chatSchema = new mongoose.Schema(
@@ -29,41 +56,35 @@ const chatSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-
     publish: {
       type: String,
       enum: ["show", "hide"],
       default: "show",
     },
-
     visibility: {
       type: String,
       enum: ["all", "users", "groups"],
       default: "all",
     },
-
     specificUsers: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
       },
     ],
-
     specificGroups: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Group",
       },
     ],
-
     author: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-
     messages: [messageSchema],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-export default mongoose.model("Chat", chatSchema);
+export default mongoose.models.Chat || mongoose.model("Chat", chatSchema);

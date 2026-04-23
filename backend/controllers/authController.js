@@ -4,7 +4,7 @@ import Invite from "../models/Invite.js";
 import { generateToken } from "../utils/jwt.js";
 
 /**
- * 🔐 LOGIN
+ * LOGIN
  */
 export async function login(req, res) {
   const { email, password } = req.body;
@@ -17,7 +17,9 @@ export async function login(req, res) {
   }
 
   try {
-    const user = await User.findOne({ email }).select("+password");
+    const user = await User.findOne({ email: email.trim() }).select(
+      "+password",
+    );
 
     if (!user || !user.isActive) {
       return res.status(401).json({
@@ -52,9 +54,10 @@ export async function login(req, res) {
         email: user.email,
         role: user.role,
         name: user.name,
+        avatar: user.avatar,
+        phone: user.phone,
       },
     });
-
   } catch (error) {
     console.error("Login error:", error);
     return res.status(500).json({
@@ -65,13 +68,13 @@ export async function login(req, res) {
 }
 
 /**
- * 🔍 CHECK INVITE
+ * CHECK INVITE
  */
 export async function checkInvite(req, res) {
   const { token } = req.params;
 
   try {
-    const invite = await Invite.findOne({ token });
+    const invite = await Invite.findOne({ token }).populate("user");
 
     if (!invite || invite.used || invite.expiresAt < new Date()) {
       return res.status(400).json({
@@ -80,16 +83,23 @@ export async function checkInvite(req, res) {
       });
     }
 
-    return res.json({ status: "success" });
-
+    return res.json({
+      status: "success",
+      data: {
+        email: invite.user?.email || "",
+      },
+    });
   } catch (error) {
     console.error("Check invite error:", error);
-    return res.status(500).json({ status: "error" });
+    return res.status(500).json({
+      status: "error",
+      message: "Chyba serveru.",
+    });
   }
 }
 
 /**
- * 🔑 SET PASSWORD + AUTO LOGIN
+ * SET PASSWORD + AUTO LOGIN
  */
 export async function setPassword(req, res) {
   const { token, password } = req.body;
@@ -101,6 +111,13 @@ export async function setPassword(req, res) {
     });
   }
 
+  if (String(password).trim().length < 6) {
+    return res.status(400).json({
+      status: "error",
+      message: "Heslo musí mít alespoň 6 znaků.",
+    });
+  }
+
   try {
     const invite = await Invite.findOne({ token });
 
@@ -111,7 +128,7 @@ export async function setPassword(req, res) {
       });
     }
 
-    const user = await User.findById(invite.user);
+    const user = await User.findById(invite.user).select("+password");
 
     if (!user) {
       return res.status(404).json({
@@ -120,8 +137,8 @@ export async function setPassword(req, res) {
       });
     }
 
-    // 🔐 Просто встановлюємо пароль
-    // mongoose pre("save") автоматично його захешує
+    // Якщо в моделі є pre("save"), він сам захешує.
+    // Якщо нема — скажи, і я підлаштую під ручне hash тут.
     user.password = password;
     user.isActive = true;
 
@@ -140,9 +157,10 @@ export async function setPassword(req, res) {
         email: user.email,
         role: user.role,
         name: user.name,
+        avatar: user.avatar,
+        phone: user.phone,
       },
     });
-
   } catch (error) {
     console.error("Set password error:", error);
     return res.status(500).json({

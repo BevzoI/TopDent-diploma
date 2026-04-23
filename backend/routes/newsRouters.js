@@ -17,16 +17,16 @@ router.get("/:id", authMiddleware, news.getOneNews);
    👑 ADMIN – create / update s uploadem souborů
 ===================================================== */
 
-// CREATE news + soubory
+// CREATE news + upload
 router.post(
   "/",
   authMiddleware,
   adminOnly,
-  upload.array("files", 10), // max 10 souborů
+  upload.array("files", 10),
   news.createNews
 );
 
-// UPDATE news + soubory
+// UPDATE news + upload
 router.patch(
   "/:id",
   authMiddleware,

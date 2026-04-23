@@ -1,48 +1,47 @@
-// routes/usersRouters.js
-
 import express from "express";
 import * as users from "../controllers/usersController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
+import { adminOnly } from "../middleware/roleMiddleware.js";
 import upload from "../middleware/uploadMiddleware.js";
 
 const router = express.Router();
 
 /* =====================================================
-   🔐 AUTH REQUIRED ROUTES
+   MY PROFILE
 ===================================================== */
 
-// Update avatar (Cloudinary)
+router.get("/me", authMiddleware, users.getMe);
+router.patch("/me", authMiddleware, users.updateMe);
+router.patch("/me/password", authMiddleware, users.changeMyPassword);
+router.post(
+  "/me/avatar",
+  authMiddleware,
+  upload.single("file"),
+  users.updateAvatar,
+);
+
+/* =====================================================
+   AUTH REQUIRED ROUTES
+===================================================== */
+
 router.patch(
   "/avatar",
   authMiddleware,
   upload.single("avatar"),
-  users.updateAvatar
+  users.updateAvatar,
 );
 
-// Get my notifications
-router.get(
-  "/notify/:userId",
-  authMiddleware,
-  users.getUserNotifications
-);
+router.get("/notify/:userId", authMiddleware, users.getUserNotifications);
 
 /* =====================================================
-   👤 USER CRUD
+   USER CRUD
 ===================================================== */
 
-// List all users
 router.get("/", authMiddleware, users.getAllUsers);
-
-// Get user by ID
 router.get("/:id", authMiddleware, users.getUserById);
 
-// Create user
-router.post("/", authMiddleware, users.createUser);
-
-// Update user
-router.patch("/:id", authMiddleware, users.updateUserById);
-
-// Delete user
-router.delete("/:id", authMiddleware, users.deleteUser);
+router.post("/", authMiddleware, adminOnly, users.createUser);
+router.patch("/:id", authMiddleware, adminOnly, users.updateUserById);
+router.delete("/:id", authMiddleware, adminOnly, users.deleteUser);
 
 export default router;

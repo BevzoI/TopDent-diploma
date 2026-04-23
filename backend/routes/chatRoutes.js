@@ -6,6 +6,11 @@ import {
   updateChat,
   deleteChat,
   sendMessage,
+  uploadChatImage,
+  uploadChatAudio,
+  editMessage,
+  deleteMessageForMe,
+  deleteMessageForEveryone,
 } from "../controllers/chatController.js";
 
 import authMiddleware from "../middleware/authMiddleware.js";
@@ -25,36 +30,50 @@ router.get("/:id", authMiddleware, getChatById);
    ADMIN – vytváření a úpravy chatu
 ===================================================== */
 
-router.post(
-  "/",
-  authMiddleware,
-  adminOnly,
-  createChat
-);
-
-router.patch(
-  "/:id",
-  authMiddleware,
-  adminOnly,
-  updateChat
-);
-
-router.delete(
-  "/:id",
-  authMiddleware,
-  adminOnly,
-  deleteChat
-);
+router.post("/", authMiddleware, adminOnly, createChat);
+router.patch("/:id", authMiddleware, adminOnly, updateChat);
+router.delete("/:id", authMiddleware, adminOnly, deleteChat);
 
 /* =====================================================
-   SEND MESSAGE + FILE UPLOAD
+   CHAT UPLOADS
 ===================================================== */
 
 router.post(
-  "/:id/message",
+  "/upload-image",
   authMiddleware,
-  upload.array("files"), // 🔥 důležité pro Cloudinary
-  sendMessage
+  upload.single("file"),
+  uploadChatImage,
+);
+
+router.post(
+  "/upload-audio",
+  authMiddleware,
+  upload.single("file"),
+  uploadChatAudio,
+);
+
+/* =====================================================
+   SEND MESSAGE
+===================================================== */
+
+router.post("/:id/message", authMiddleware, upload.array("files"), sendMessage);
+
+/* =====================================================
+   MESSAGE ACTIONS
+===================================================== */
+
+router.patch("/:chatId/message/:messageId", authMiddleware, editMessage);
+
+router.patch(
+  "/:chatId/message/:messageId/delete-for-me",
+  authMiddleware,
+  deleteMessageForMe,
+);
+
+router.patch(
+  "/:chatId/message/:messageId/delete-for-everyone",
+  authMiddleware,
+  deleteMessageForEveryone,
 );
 
 export default router;

@@ -20,10 +20,6 @@ const newsSchema = new mongoose.Schema(
       default: "hide",
     },
 
-    /* =========================================
-       Viditelnost zprávy
-    ========================================= */
-
     visibility: {
       type: String,
       enum: ["all", "users", "groups"],
@@ -44,28 +40,20 @@ const newsSchema = new mongoose.Schema(
       },
     ],
 
-    /* =========================================
-       Přílohy (Cloudinary)
-    ========================================= */
-
     attachments: [
       {
-        url: String,
-        name: String,
-        type: String,
+        url: { type: String, required: true },
+        name: { type: String, default: "" },
+        type: { type: String, default: "file" },
       },
     ],
-
-    /* =========================================
-       Autor
-    ========================================= */
 
     author: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-export default mongoose.model("News", newsSchema);
+export default mongoose.models.News || mongoose.model("News", newsSchema);

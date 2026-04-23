@@ -6,26 +6,53 @@ const courseSchema = new mongoose.Schema(
     description: { type: String, default: "", trim: true },
     dateTime: { type: Date, required: true },
     location: { type: String, default: "", trim: true },
+
     publish: {
       type: String,
       enum: ["show", "hide"],
       default: "hide",
     },
-    users: [
+
+    visibility: {
+      type: String,
+      enum: ["all", "users", "groups"],
+      default: "all",
+    },
+
+    specificUsers: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
-      }
+      },
     ],
+
+    specificGroups: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Group",
+      },
+    ],
+
     answers: [
       {
-        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-        value: { type: String, enum: ["yes", "no"], required: true },
-        answeredAt: { type: Date, default: Date.now }
-      }
-    ]
+        userId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        value: {
+          type: String,
+          enum: ["yes", "no"],
+          required: true,
+        },
+        answeredAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.model("Course", courseSchema);
