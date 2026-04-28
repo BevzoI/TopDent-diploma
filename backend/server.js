@@ -18,9 +18,11 @@ import eventRoutes from "./routes/eventRoutes.js";
 import courseRoutes from "./routes/courseRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
 import groupsRoutes from "./routes/groupsRoutes.js";
+import galleryRoutes from "./routes/galleryRoutes.js";
 
 // MODEL
 import Chat from "./models/Chat.js";
+import User from "./models/User.js";
 
 dotenv.config();
 
@@ -95,11 +97,11 @@ app.use("/events", eventRoutes);
 app.use("/courses", courseRoutes);
 app.use("/chat", chatRoutes);
 app.use("/groups", groupsRoutes);
+app.use("/gallery", galleryRoutes);
 
 /* =======================================================
    SOCKET.IO
 ======================================================= */
-
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
@@ -112,15 +114,45 @@ const onlineUsers = new Map();
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
-  socket.on("join_chat", ({ chatId, userId }) => {
-    if (!chatId || !userId) return;
+  socket.on("join_chat", async ({ chatId, userId }) => {
+    try {
+      if (!chatId || !userId) return;
 
-    socket.join(chatId);
-    socket.userId = userId.toString();
+      socket.join(chatId);
+      socket.userId = userId.toString();
 
-    onlineUsers.set(socket.userId, socket.id);
+      onlineUsers.set(socket.userId, socket.id);
+      io.emit("online_users", Array.from(onlineUsers.keys()));
 
-    io.emit("online_users", Array.from(onlineUsers.keys()));
+      const chat = await Chat.findById(chatId);
+      if (!chat) return;
+
+      let changed = false;
+
+      chat.messages.forEach((message) => {
+        if (!Array.isArray(message.readBy)) {
+          message.readBy = [];
+        }
+
+        const alreadyRead = message.readBy.some(
+          (id) => id.toString() === socket.userId.toString(),
+        );
+
+        const senderId = message.sender?.toString?.() || "";
+        const isOwnMessage = senderId === socket.userId.toString();
+
+        if (!alreadyRead && !isOwnMessage) {
+          message.readBy.push(socket.userId);
+          changed = true;
+        }
+      });
+
+      if (changed) {
+        await chat.save();
+      }
+    } catch (err) {
+      console.log("Join chat error:", err);
+    }
   });
 
   socket.on("typing", ({ chatId }) => {
@@ -171,6 +203,8 @@ io.on("connection", (socket) => {
       chat.messages.push(newMessage);
       await chat.save();
 
+      await User.updateMany({ _id: { $ne: socket.userId } }, { newChat: true });
+
       const populatedChat = await Chat.findById(chatId).populate(
         "messages.sender",
         "name email avatar",
@@ -182,6 +216,84 @@ io.on("connection", (socket) => {
       io.to(chatId).emit("receive_message", savedMessage);
     } catch (err) {
       console.log("Socket message error:", err);
+    }
+  });
+
+  socket.on("edit_message", async ({ chatId, messageId, content }) => {
+    try {
+      if (!socket.userId || !chatId || !messageId) return;
+
+      const chat = await Chat.findById(chatId);
+      if (!chat) return;
+
+      const message = chat.messages.id(messageId);
+      if (!message) return;
+
+      if (String(message.sender) !== String(socket.userId)) return;
+      if (message.isDeletedForEveryone) return;
+
+      message.content = content || "";
+      message.edited = true;
+
+      await chat.save();
+
+      const populatedChat = await Chat.findById(chatId).populate(
+        "messages.sender",
+        "name email avatar",
+      );
+
+      const updatedMessage = populatedChat.messages.id(messageId);
+
+      io.to(chatId).emit("message_updated", updatedMessage);
+    } catch (err) {
+      console.log("Edit message error:", err);
+    }
+  });
+
+  socket.on("delete_message", async ({ chatId, messageId, mode, userId }) => {
+    try {
+      if (!socket.userId || !chatId || !messageId) return;
+
+      const chat = await Chat.findById(chatId);
+      if (!chat) return;
+
+      const message = chat.messages.id(messageId);
+      if (!message) return;
+
+      if (String(message.sender) !== String(socket.userId)) return;
+
+      if (mode === "everyone") {
+        message.content = "";
+        message.attachments = [];
+        message.edited = false;
+        message.isDeletedForEveryone = true;
+
+        await chat.save();
+
+        io.to(chatId).emit("message_deleted_for_everyone", {
+          messageId,
+        });
+      } else {
+        if (!Array.isArray(message.deletedForUsers)) {
+          message.deletedForUsers = [];
+        }
+
+        const alreadyDeleted = message.deletedForUsers.some(
+          (id) => String(id) === String(userId),
+        );
+
+        if (!alreadyDeleted) {
+          message.deletedForUsers.push(userId);
+          await chat.save();
+        }
+
+        io.to(chatId).emit("message_deleted_for_me", {
+          messageId,
+          userId,
+        });
+      }
+    } catch (err) {
+      console.log("Delete message error:", err);
     }
   });
 

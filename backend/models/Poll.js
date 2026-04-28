@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const pollSchema = new mongoose.Schema(
   {
@@ -7,31 +7,61 @@ const pollSchema = new mongoose.Schema(
     description: {
       type: String,
       trim: true,
-      default: ""
+      default: "",
     },
 
-    publish: { 
-      type: String, 
-      enum: ["show", "hide"], 
-      default: "hide" 
+    publish: {
+      type: String,
+      enum: ["show", "hide"],
+      default: "hide",
     },
 
-    users: [
+    visibility: {
+      type: String,
+      enum: ["all", "users", "groups"],
+      default: "all",
+    },
+
+    specificUsers: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
-      }
+      },
+    ],
+
+    specificGroups: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Group",
+      },
+    ],
+
+    options: [
+      {
+        type: String,
+        trim: true,
+      },
     ],
 
     answers: [
       {
-        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-        value: { type: String, enum: ["yes", "no"], required: true },
-        answeredAt: { type: Date, default: Date.now }
-      }
-    ]
+        userId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        value: {
+          type: String,
+          required: true,
+        },
+        answeredAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.model("Poll", pollSchema);

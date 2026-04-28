@@ -20,6 +20,9 @@ router.post(
   users.updateAvatar,
 );
 
+router.get("/me/notifications", authMiddleware, users.getMyNotifications);
+router.patch("/me/notifications", authMiddleware, users.clearMyNotification);
+
 /* =====================================================
    AUTH REQUIRED ROUTES
 ===================================================== */

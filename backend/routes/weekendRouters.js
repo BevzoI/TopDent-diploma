@@ -1,13 +1,22 @@
 import express from "express";
 import * as weekend from "../controllers/weekendController.js";
+import authMiddleware from "../middleware/authMiddleware.js";
+import { adminOnly } from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
-router.get("/", weekend.getAllWeekend);
-router.get("/:id", weekend.getOneWeekend);
-router.post("/", weekend.createWeekend);
-router.patch("/:id", weekend.updateWeekend);
-router.delete("/:id", weekend.deleteWeekend);
-router.patch("/:id/status", weekend.updateWeekendStatus);
+router.get("/", authMiddleware, weekend.getAllWeekend);
+router.get("/:id", authMiddleware, weekend.getOneWeekend);
+
+router.post("/", authMiddleware, weekend.createWeekend);
+
+router.patch(
+  "/:id/status",
+  authMiddleware,
+  adminOnly,
+  weekend.updateWeekendStatus,
+);
+
+router.delete("/:id", authMiddleware, weekend.deleteWeekend);
 
 export default router;

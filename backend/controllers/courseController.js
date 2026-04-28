@@ -1,4 +1,5 @@
 import Course from "../models/Course.js";
+import User from "../models/User.js";
 
 /* =====================================================
    HELPER – ACCESS
@@ -38,6 +39,8 @@ function hasAccess(course, user) {
 ===================================================== */
 export async function createCourse(req, res) {
   try {
+    const user = req.user;
+
     const {
       title,
       description,
@@ -71,6 +74,11 @@ export async function createCourse(req, res) {
       answers: [],
     });
 
+    await User.updateMany(
+      { _id: { $ne: user?._id } },
+      { $set: { newCourse: true } },
+    );
+
     return res.json({
       status: "success",
       data: item,
@@ -98,6 +106,10 @@ export async function getAllCourses(req, res) {
       .sort({ dateTime: 1 });
 
     const filtered = items.filter((course) => hasAccess(course, user));
+
+    if (user?._id) {
+      await User.findByIdAndUpdate(user._id, { newCourse: false });
+    }
 
     return res.json({
       status: "success",
@@ -157,6 +169,8 @@ export async function getOneCourse(req, res) {
 ===================================================== */
 export async function updateCourse(req, res) {
   try {
+    const user = req.user;
+
     const {
       title,
       description,
@@ -201,6 +215,11 @@ export async function updateCourse(req, res) {
         message: "Kurz nebyl nalezen",
       });
     }
+
+    await User.updateMany(
+      { _id: { $ne: user?._id } },
+      { $set: { newCourse: true } },
+    );
 
     return res.json({
       status: "success",

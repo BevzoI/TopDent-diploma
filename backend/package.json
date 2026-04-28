@@ -11,6 +11,7 @@
 	"type": "module",
 	"description": "",
 	"dependencies": {
+		"@react-native-community/datetimepicker": "^9.1.0",
 		"bcryptjs": "^2.4.3",
 		"body-parser": "^1.20.3",
 		"cloudinary": "^2.8.0",

@@ -6,11 +6,6 @@ import {
   updateChat,
   deleteChat,
   sendMessage,
-  uploadChatImage,
-  uploadChatAudio,
-  editMessage,
-  deleteMessageForMe,
-  deleteMessageForEveryone,
 } from "../controllers/chatController.js";
 
 import authMiddleware from "../middleware/authMiddleware.js";
@@ -35,45 +30,9 @@ router.patch("/:id", authMiddleware, adminOnly, updateChat);
 router.delete("/:id", authMiddleware, adminOnly, deleteChat);
 
 /* =====================================================
-   CHAT UPLOADS
-===================================================== */
-
-router.post(
-  "/upload-image",
-  authMiddleware,
-  upload.single("file"),
-  uploadChatImage,
-);
-
-router.post(
-  "/upload-audio",
-  authMiddleware,
-  upload.single("file"),
-  uploadChatAudio,
-);
-
-/* =====================================================
-   SEND MESSAGE
+   SEND MESSAGE + FILE UPLOAD
 ===================================================== */
 
 router.post("/:id/message", authMiddleware, upload.array("files"), sendMessage);
-
-/* =====================================================
-   MESSAGE ACTIONS
-===================================================== */
-
-router.patch("/:chatId/message/:messageId", authMiddleware, editMessage);
-
-router.patch(
-  "/:chatId/message/:messageId/delete-for-me",
-  authMiddleware,
-  deleteMessageForMe,
-);
-
-router.patch(
-  "/:chatId/message/:messageId/delete-for-everyone",
-  authMiddleware,
-  deleteMessageForEveryone,
-);
 
 export default router;

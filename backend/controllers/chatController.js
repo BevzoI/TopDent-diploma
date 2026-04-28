@@ -44,19 +44,67 @@ export async function getChats(req, res) {
     const user = req.user;
 
     const chats = await Chat.find()
-      .populate("author", "name email")
+      .populate("author", "name email avatar")
+      .populate("messages.sender", "name email avatar")
       .populate("specificGroups", "name")
-      .sort({ createdAt: -1 });
+      .sort({ updatedAt: -1, createdAt: -1 });
 
-    const filtered = chats.filter((chat) => hasAccess(chat, user));
+    const filtered = chats
+      .filter((chat) => hasAccess(chat, user))
+      .map((chat) => {
+        const messages = Array.isArray(chat.messages) ? chat.messages : [];
+        const lastMessage =
+          messages.length > 0 ? messages[messages.length - 1] : null;
+
+        const unreadCount = messages.filter((msg) => {
+          if (!msg || !msg._id) return false;
+
+          const senderId =
+            msg.sender?._id?.toString?.() || msg.sender?.toString?.();
+          if (senderId === user._id.toString()) return false;
+
+          const readBy = Array.isArray(msg.readBy) ? msg.readBy : [];
+          const isRead = readBy.some(
+            (id) => id.toString() === user._id.toString(),
+          );
+
+          return !isRead && !msg.isDeletedForEveryone;
+        }).length;
+
+        return {
+          _id: chat._id,
+          id: chat._id,
+          title: chat.title || "Chat",
+          name: chat.title || "Chat",
+          publish: chat.publish,
+          visibility: chat.visibility,
+          specificUsers: chat.specificUsers || [],
+          specificGroups: chat.specificGroups || [],
+          author: chat.author,
+          unreadCount,
+          lastMessage: lastMessage
+            ? {
+                _id: lastMessage._id,
+                content: lastMessage.content || "",
+                attachments: lastMessage.attachments || [],
+                sender: lastMessage.sender,
+                createdAt: lastMessage.createdAt,
+                edited: !!lastMessage.edited,
+                isDeletedForEveryone: !!lastMessage.isDeletedForEveryone,
+              }
+            : null,
+          createdAt: chat.createdAt,
+          updatedAt: chat.updatedAt,
+        };
+      });
 
     return res.json({
       status: "success",
-      data: filtered,
+      chats: filtered,
     });
   } catch (error) {
     console.error("Chyba při načítání chatů:", error);
-    return res.status(500).json({ status: "error", error: error.message });
+    return res.status(500).json({ status: "error" });
   }
 }
 
@@ -69,7 +117,7 @@ export async function getChatById(req, res) {
     const user = req.user;
 
     const chat = await Chat.findById(req.params.id)
-      .populate("author", "name email")
+      .populate("author", "name email avatar")
       .populate("messages.sender", "name email avatar")
       .populate("specificGroups", "name");
 
@@ -84,24 +132,13 @@ export async function getChatById(req, res) {
       });
     }
 
-    const userId = user._id.toString();
-
-    const sanitizedMessages = chat.messages.filter((msg) => {
-      if (!Array.isArray(msg.deletedForUsers)) return true;
-
-      return !msg.deletedForUsers.some((id) => id.toString() === userId);
-    });
-
-    const chatObj = chat.toObject();
-    chatObj.messages = sanitizedMessages;
-
     return res.json({
       status: "success",
-      data: chatObj,
+      data: chat,
     });
   } catch (error) {
     console.error("Chyba při načítání chatu:", error);
-    return res.status(500).json({ status: "error", error: error.message });
+    return res.status(500).json({ status: "error" });
   }
 }
 
@@ -132,7 +169,7 @@ export async function createChat(req, res) {
     });
   } catch (error) {
     console.error("Chyba při vytváření chatu:", error);
-    return res.status(400).json({ status: "error", error: error.message });
+    return res.status(400).json({ status: "error" });
   }
 }
 
@@ -163,7 +200,7 @@ export async function updateChat(req, res) {
     });
   } catch (error) {
     console.error("Chyba při úpravě chatu:", error);
-    return res.status(400).json({ status: "error", error: error.message });
+    return res.status(400).json({ status: "error" });
   }
 }
 
@@ -177,96 +214,12 @@ export async function deleteChat(req, res) {
     return res.json({ status: "success" });
   } catch (error) {
     console.error("Chyba při mazání chatu:", error);
-    return res.status(500).json({ status: "error", error: error.message });
+    return res.status(500).json({ status: "error" });
   }
 }
 
 /* =====================================================
-   UPLOAD CHAT IMAGE
-===================================================== */
-
-export async function uploadChatImage(req, res) {
-  try {
-    if (!req.file) {
-      return res.status(400).json({
-        status: "error",
-        message: "Image file is required.",
-      });
-    }
-
-    const uploadResult = await new Promise((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        {
-          folder: "chat_images",
-          resource_type: "image",
-        },
-        (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
-        },
-      );
-
-      stream.end(req.file.buffer);
-    });
-
-    return res.json({
-      status: "success",
-      url: uploadResult.secure_url,
-    });
-  } catch (error) {
-    console.error("Upload chat image error:", error);
-    return res.status(500).json({
-      status: "error",
-      message: "Failed to upload image.",
-      error: error.message,
-    });
-  }
-}
-
-/* =====================================================
-   UPLOAD CHAT AUDIO
-===================================================== */
-
-export async function uploadChatAudio(req, res) {
-  try {
-    if (!req.file) {
-      return res.status(400).json({
-        status: "error",
-        message: "Audio file is required.",
-      });
-    }
-
-    const uploadResult = await new Promise((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        {
-          folder: "chat_audio",
-          resource_type: "video",
-        },
-        (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
-        },
-      );
-
-      stream.end(req.file.buffer);
-    });
-
-    return res.json({
-      status: "success",
-      url: uploadResult.secure_url,
-    });
-  } catch (error) {
-    console.error("Upload chat audio error:", error);
-    return res.status(500).json({
-      status: "error",
-      message: "Failed to upload audio.",
-      error: error.message,
-    });
-  }
-}
-
-/* =====================================================
-   SEND MESSAGE
+   SEND MESSAGE + FILE UPLOAD
 ===================================================== */
 
 export async function sendMessage(req, res) {
@@ -284,7 +237,7 @@ export async function sendMessage(req, res) {
       return res.status(403).json({ status: "error" });
     }
 
-    let attachments = [];
+    const attachments = [];
 
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
@@ -304,13 +257,8 @@ export async function sendMessage(req, res) {
 
         attachments.push({
           url: uploadResult.secure_url,
+          type: uploadResult.resource_type === "image" ? "image" : "audio",
           name: file.originalname,
-          type:
-            uploadResult.resource_type === "image"
-              ? "image"
-              : uploadResult.resource_type === "video"
-                ? "audio"
-                : "file",
         });
       }
     }
@@ -318,16 +266,16 @@ export async function sendMessage(req, res) {
     if (image) {
       attachments.push({
         url: image,
-        name: "image",
         type: "image",
+        name: "image",
       });
     }
 
     if (audio) {
       attachments.push({
         url: audio,
-        name: "audio",
         type: "audio",
+        name: "audio",
       });
     }
 
@@ -358,176 +306,6 @@ export async function sendMessage(req, res) {
     });
   } catch (error) {
     console.error("Send message error:", error);
-    return res.status(500).json({
-      status: "error",
-      error: error.message,
-    });
-  }
-}
-
-/* =====================================================
-   EDIT MESSAGE
-===================================================== */
-
-export async function editMessage(req, res) {
-  try {
-    const user = req.user;
-    const { chatId, messageId } = req.params;
-    const { content } = req.body;
-
-    const chat = await Chat.findById(chatId);
-    if (!chat) {
-      return res
-        .status(404)
-        .json({ status: "error", message: "Chat not found" });
-    }
-
-    const message = chat.messages.id(messageId);
-    if (!message) {
-      return res
-        .status(404)
-        .json({ status: "error", message: "Message not found" });
-    }
-
-    const isOwner = message.sender?.toString() === user._id.toString();
-
-    if (!isOwner && user.role !== "admin") {
-      return res.status(403).json({
-        status: "error",
-        message: "Nemáte oprávnění upravit tuto zprávu",
-      });
-    }
-
-    message.content = content || "";
-    message.edited = true;
-
-    await chat.save();
-
-    const populatedChat = await Chat.findById(chatId).populate(
-      "messages.sender",
-      "name email avatar",
-    );
-
-    const updatedMessage = populatedChat.messages.id(messageId);
-
-    return res.json({
-      status: "success",
-      message: updatedMessage,
-    });
-  } catch (error) {
-    console.error("Edit message error:", error);
-    return res.status(500).json({
-      status: "error",
-      error: error.message,
-    });
-  }
-}
-
-/* =====================================================
-   DELETE MESSAGE FOR ME
-===================================================== */
-
-export async function deleteMessageForMe(req, res) {
-  try {
-    const user = req.user;
-    const { chatId, messageId } = req.params;
-
-    const chat = await Chat.findById(chatId);
-    if (!chat) {
-      return res
-        .status(404)
-        .json({ status: "error", message: "Chat not found" });
-    }
-
-    const message = chat.messages.id(messageId);
-    if (!message) {
-      return res
-        .status(404)
-        .json({ status: "error", message: "Message not found" });
-    }
-
-    if (!Array.isArray(message.deletedForUsers)) {
-      message.deletedForUsers = [];
-    }
-
-    const alreadyDeleted = message.deletedForUsers.some(
-      (id) => id.toString() === user._id.toString(),
-    );
-
-    if (!alreadyDeleted) {
-      message.deletedForUsers.push(user._id);
-      await chat.save();
-    }
-
-    return res.json({
-      status: "success",
-      messageId,
-      userId: user._id,
-    });
-  } catch (error) {
-    console.error("Delete for me error:", error);
-    return res.status(500).json({
-      status: "error",
-      error: error.message,
-    });
-  }
-}
-
-/* =====================================================
-   DELETE MESSAGE FOR EVERYONE
-===================================================== */
-
-export async function deleteMessageForEveryone(req, res) {
-  try {
-    const user = req.user;
-    const { chatId, messageId } = req.params;
-
-    const chat = await Chat.findById(chatId);
-    if (!chat) {
-      return res
-        .status(404)
-        .json({ status: "error", message: "Chat not found" });
-    }
-
-    const message = chat.messages.id(messageId);
-    if (!message) {
-      return res
-        .status(404)
-        .json({ status: "error", message: "Message not found" });
-    }
-
-    const isOwner = message.sender?.toString() === user._id.toString();
-
-    if (!isOwner && user.role !== "admin") {
-      return res.status(403).json({
-        status: "error",
-        message: "Nemáte oprávnění smazat tuto zprávu",
-      });
-    }
-
-    message.content = "Zpráva byla smazána";
-    message.attachments = [];
-    message.edited = false;
-    message.isDeletedForEveryone = true;
-
-    await chat.save();
-
-    const populatedChat = await Chat.findById(chatId).populate(
-      "messages.sender",
-      "name email avatar",
-    );
-
-    const updatedMessage = populatedChat.messages.id(messageId);
-
-    return res.json({
-      status: "success",
-      message: updatedMessage,
-    });
-  } catch (error) {
-    console.error("Delete for everyone error:", error);
-    return res.status(500).json({
-      status: "error",
-      error: error.message,
-    });
+    return res.status(500).json({ status: "error" });
   }
 }

@@ -17,21 +17,28 @@ export async function login(req, res) {
   }
 
   try {
-    const user = await User.findOne({ email: email.trim() }).select(
-      "+password",
-    );
+    const user = await User.findOne({
+      email: email.trim().toLowerCase(),
+    }).select("+password");
 
-    if (!user || !user.isActive) {
+    if (!user) {
       return res.status(401).json({
         status: "error",
         message: "Neplatné přihlašovací údaje.",
       });
     }
 
-    if (!user.password) {
+    if (!user.isActive) {
       return res.status(401).json({
         status: "error",
         message: "Účet není aktivovaný.",
+      });
+    }
+
+    if (!user.password) {
+      return res.status(401).json({
+        status: "error",
+        message: "Účet nemá nastavené heslo.",
       });
     }
 
@@ -53,9 +60,9 @@ export async function login(req, res) {
         id: user._id,
         email: user.email,
         role: user.role,
-        name: user.name,
-        avatar: user.avatar,
-        phone: user.phone,
+        name: user.name || "",
+        avatar: user.avatar || "",
+        phone: user.phone || "",
       },
     });
   } catch (error) {
@@ -63,6 +70,7 @@ export async function login(req, res) {
     return res.status(500).json({
       status: "error",
       message: "Chyba serveru.",
+      error: error.message,
     });
   }
 }
@@ -137,8 +145,6 @@ export async function setPassword(req, res) {
       });
     }
 
-    // Якщо в моделі є pre("save"), він сам захешує.
-    // Якщо нема — скажи, і я підлаштую під ручне hash тут.
     user.password = password;
     user.isActive = true;
 
@@ -156,9 +162,9 @@ export async function setPassword(req, res) {
         id: user._id,
         email: user.email,
         role: user.role,
-        name: user.name,
-        avatar: user.avatar,
-        phone: user.phone,
+        name: user.name || "",
+        avatar: user.avatar || "",
+        phone: user.phone || "",
       },
     });
   } catch (error) {
@@ -166,6 +172,7 @@ export async function setPassword(req, res) {
     return res.status(500).json({
       status: "error",
       message: "Chyba serveru.",
+      error: error.message,
     });
   }
 }

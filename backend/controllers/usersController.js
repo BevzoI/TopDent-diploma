@@ -378,7 +378,7 @@ export async function changeMyPassword(req, res) {
       });
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).select("+password");
 
     if (!user) {
       return res.status(404).json({
@@ -466,6 +466,98 @@ export async function updateAvatar(req, res) {
     return res.status(500).json({
       status: "error",
       message: "Chyba při aktualizaci avatara.",
+    });
+  }
+}
+
+/* =====================================================
+   GET MY NOTIFICATIONS
+===================================================== */
+export async function getMyNotifications(req, res) {
+  try {
+    const user = await User.findById(req.user._id).lean();
+
+    if (!user) {
+      return res.status(404).json({
+        status: "error",
+        message: "Uživatel nebyl nalezen.",
+      });
+    }
+
+    return res.json({
+      status: "success",
+      data: {
+        news: Boolean(user.newNews),
+        chat: Boolean(user.newChat),
+        poll: Boolean(user.newPoll),
+        courses: Boolean(user.newCourse),
+        events: Boolean(user.newEvent),
+        weekend: Boolean(user.newWeekend),
+      },
+    });
+  } catch (error) {
+    console.error("Get my notifications error:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Chyba serveru.",
+    });
+  }
+}
+
+/* =====================================================
+   CLEAR MY NOTIFICATION BY TYPE
+===================================================== */
+export async function clearMyNotification(req, res) {
+  try {
+    const { type } = req.body;
+
+    const fieldMap = {
+      news: "newNews",
+      chat: "newChat",
+      poll: "newPoll",
+      courses: "newCourse",
+      events: "newEvent",
+      weekend: "newWeekend",
+    };
+
+    const field = fieldMap[type];
+
+    if (!field) {
+      return res.status(400).json({
+        status: "error",
+        message: "Neplatný typ notifikace.",
+      });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      { [field]: false },
+      { new: true },
+    ).lean();
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        status: "error",
+        message: "Uživatel nebyl nalezen.",
+      });
+    }
+
+    return res.json({
+      status: "success",
+      data: {
+        news: Boolean(updatedUser.newNews),
+        chat: Boolean(updatedUser.newChat),
+        poll: Boolean(updatedUser.newPoll),
+        courses: Boolean(updatedUser.newCourse),
+        events: Boolean(updatedUser.newEvent),
+        weekend: Boolean(updatedUser.newWeekend),
+      },
+    });
+  } catch (error) {
+    console.error("Clear notification error:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Chyba serveru.",
     });
   }
 }

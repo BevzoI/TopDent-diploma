@@ -63,7 +63,7 @@ export const getOneNews = async (req, res) => {
   try {
     const item = await News.findById(req.params.id).populate(
       "author",
-      "name email"
+      "name email",
     );
 
     if (!item) {
@@ -105,17 +105,11 @@ export const createNews = async (req, res) => {
         mimetype: f.mimetype,
         size: f.size,
         hasBuffer: !!f.buffer,
-      }))
+      })),
     );
 
-    const {
-      title,
-      text,
-      publish,
-      visibility,
-      specificUsers,
-      specificGroups,
-    } = req.body;
+    const { title, text, publish, visibility, specificUsers, specificGroups } =
+      req.body;
 
     let uploadedFiles = [];
 
@@ -141,7 +135,7 @@ export const createNews = async (req, res) => {
               } else {
                 resolve(result);
               }
-            }
+            },
           );
 
           stream.end(file.buffer);
@@ -171,12 +165,17 @@ export const createNews = async (req, res) => {
     }
 
     if (visibility === "groups") {
-      newsData.specificGroups = specificGroups ? JSON.parse(specificGroups) : [];
+      newsData.specificGroups = specificGroups
+        ? JSON.parse(specificGroups)
+        : [];
     }
 
     const item = await News.create(newsData);
 
-    await User.updateMany({}, { $set: { newNews: true } });
+    await User.updateMany(
+      { _id: { $ne: user._id } },
+      { $set: { newNews: true } },
+    );
 
     console.log("=== CREATE NEWS SUCCESS ===");
 
@@ -201,6 +200,8 @@ export const createNews = async (req, res) => {
 
 export const updateNews = async (req, res) => {
   try {
+    const user = req.user;
+
     console.log("=== UPDATE NEWS START ===");
     console.log("BODY:", req.body);
     console.log(
@@ -211,17 +212,11 @@ export const updateNews = async (req, res) => {
         mimetype: f.mimetype,
         size: f.size,
         hasBuffer: !!f.buffer,
-      }))
+      })),
     );
 
-    const {
-      title,
-      text,
-      publish,
-      visibility,
-      specificUsers,
-      specificGroups,
-    } = req.body;
+    const { title, text, publish, visibility, specificUsers, specificGroups } =
+      req.body;
 
     const item = await News.findById(req.params.id);
 
@@ -274,7 +269,7 @@ export const updateNews = async (req, res) => {
               } else {
                 resolve(result);
               }
-            }
+            },
           );
 
           stream.end(file.buffer);
@@ -289,6 +284,11 @@ export const updateNews = async (req, res) => {
     }
 
     await item.save();
+
+    await User.updateMany(
+      { _id: { $ne: user._id } },
+      { $set: { newNews: true } },
+    );
 
     console.log("=== UPDATE NEWS SUCCESS ===");
 
